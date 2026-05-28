@@ -1,0 +1,16 @@
+# group: stationary | mobile (як у config/groups.yaml)
+branches:
+  - group: stationary
+    code: "77503"
+    name: "Долина 3"
+    work_weekdays: [0, 1, 2, 3, 4]
+
+  - group: stationary
+    code: "77504"
+    name: "Долина 4"
+    work_weekdays: [0, 1, 2, 3, 4]
+
+  - group: mobile
+    code: "M001"
+    name: "Пересувне відділення (приклад)"
+    work_weekdays: [0, 1, 2, 3, 4, 5]

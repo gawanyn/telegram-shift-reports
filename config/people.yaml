@@ -1,0 +1,22 @@
+# group: stationary | mobile
+# telegram_id — надійніше за username (дізнатися: @userinfobot або з логів після першого звіту)
+# username — без @, опційно
+people:
+  - group: stationary
+    display_name: "Старий"
+    username: gridRunner0
+    telegram_id: 5854549861
+    branch_code: "77503"
+
+  - group: stationary
+    display_name: "Кохана💋"
+    username: 
+    telegram_id: 729521477
+    branch_code: "77504"
+
+  # Додайте пересувних нижче, наприклад:
+  # - group: mobile
+  #   display_name: "Ім'я"
+  #   username: their_username
+  #   telegram_id: 123456789
+  #   branch_code: "M001"

@@ -1,0 +1,16 @@
+timezone: Europe/Kyiv
+
+# Поки false — без годинника; керування командами в чаті (!нагадування тощо)
+schedule_enabled: false
+
+# Поки false — усі з people.yaml «очікуються» щодня (графік відділень не перевіряється)
+branch_calendar_enabled: false
+
+# Коли увімкнете schedule_enabled: true:
+reminder_time: "17:00"
+missing_check_time: "19:00"
+dm_time: "20:00"
+
+# Випадкова затримка уточнення при 0 торгівлі / 0 передплати (секунди)
+followup_delay_min_sec: 180
+followup_delay_max_sec: 480

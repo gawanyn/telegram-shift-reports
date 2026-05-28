@@ -1,0 +1,11 @@
+.env
+*.session
+*.session-journal
+credentials/
+service_account.json
+__pycache__/
+*.pyc
+.venv/
+venv/
+data/
+login_qr.png

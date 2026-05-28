@@ -1,0 +1,6 @@
+# Один робочий чат для тестування стаціонарної групи.
+# env_var — ім'я змінної в .env з id групи (-100...) або @username
+groups:
+  - id: stationary
+    title: Стаціонарні автоматизовані
+    env_var: WORK_GROUP_STATIONARY_ID
