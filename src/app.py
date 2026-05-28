@@ -40,6 +40,8 @@ class ShiftReportBot:
         self._scheduler = AsyncIOScheduler(timezone=self.tz)
         self._followup_tasks: dict[tuple[str, str, int, str], asyncio.Task] = {}
         self._my_id: int | None = None
+        self.daily_plans: dict = {}
+        logger.info("Завантажено планів для %d відділень", len(self.daily_plans))
 
     async def start(self) -> None:
         await require_authorized(self.client)
@@ -49,9 +51,13 @@ class ShiftReportBot:
         await self._resolve_people_ids()
         try:
             self._sheets = SheetsWriter()
+            # 🔄 Завантажуємо плани через правильний, робочий об'єкт:
+            self.daily_plans = self._sheets.load_daily_plans()
+            logger.info("Завантажено планів для %d відділень", len(self.daily_plans))
         except Exception as exc:
             logger.warning("Google Sheets вимкнено: %s", exc)
             self._sheets = None
+            self.daily_plans = {}
 
         self._register_handlers()
         self._register_scheduler()
@@ -65,6 +71,7 @@ class ShiftReportBot:
                 "Команди у робочому чаті (з вашого акаунта): "
                 "!нагадування  !хто  !лс  !скинути  !допомога"
             )
+            
         await self.client.run_until_disconnected()
 
     async def _resolve_groups(self) -> None:
@@ -310,6 +317,7 @@ class ShiftReportBot:
             "!dm": lambda: self._job_send_dm_for_group(group),
             "!скинути": lambda: self._cmd_reset_day(group_id),
             "!reset": lambda: self._cmd_reset_day(group_id),
+            "!плани_апдейт": lambda: self._cmd_reload_plans(event),
         }
         if cmd in ("!допомога", "!help"):
             await event.reply(
@@ -341,6 +349,14 @@ class ShiftReportBot:
         day = today_local(self.cfg, self._now())
         self.state.reset_day(day, group_id)
         logger.info("Скинуто стан [%s] за %s", group_id, day)
+
+    async def _cmd_reload_plans(self, event: events.NewMessage.Event) -> None:
+        if self._sheets:
+            self.daily_plans = self._sheets.load_daily_plans()
+            await event.reply(f"🔄 Кеш планів успішно оновлено! Завантажено відділень: {len(self.daily_plans)}")
+            logger.info("Адміністратор оновив кеш планів з Google Sheets")
+        else:
+            await event.reply("❌ Помилка: модуль Google Sheets не активний.")
 
     async def _handle_group_message(self, event: events.NewMessage.Event) -> None:
         chat_id = event.chat_id
@@ -465,6 +481,65 @@ class ShiftReportBot:
             f"передплата={parsed.get('subscription', 0.0)} → таблиця=так"
         )
 
+        b_code = parsed.get("id", "")
+        if b_code:
+            b_code = str(b_code).strip()
+            
+        fact_trade = float(parsed.get("trade", 0.0))
+        fact_sub = float(parsed.get("subscription", 0.0))
+
+        # Шукаємо місячні плани у нашому кеші daily_plans
+        branch_plans = self.daily_plans.get(b_code)
+
+        # Отримуємо блоки з конфігу messages.yaml
+        msg_group = self.cfg.messages.get(group_id, {}) if hasattr(self.cfg, "messages") else {}
+        markers = msg_group.get("performance_markers", self.cfg.messages.get("performance_markers", {}))
+        cries = msg_group.get("battle_cries", self.cfg.messages.get("battle_cries", {}))
+
+        if branch_plans and markers and cries:
+            plan_trade = branch_plans.get("trade", 0.0)
+            plan_sub = branch_plans.get("prepayment", 0.0)
+
+            # 1. Рахуємо торгівлю
+            p_trade = round((fact_trade / plan_trade) * 100) if plan_trade > 0 else 100
+            status_trade = "overfulfilled" if p_trade >= 100 else ("normal" if p_trade >= 70 else "low")
+            marker_trade = markers.get(status_trade, "")
+
+            # 2. Рахуємо передплату
+            p_sub = round((fact_sub / plan_sub) * 100) if plan_sub > 0 else 100
+            status_sub = "overfulfilled" if p_sub >= 100 else ("normal" if p_sub >= 70 else "low")
+            marker_sub = markers.get(status_sub, "")
+
+            # 3. Визначаємо фінальний бойовий клич команди
+            if status_trade != "low" and status_sub != "low":
+                cry = random.choice(cries.get("both_win", ["💪 Так тримати!"]))
+            elif status_trade == "low" and status_sub == "low":
+                cry = random.choice(cries.get("both_low", ["⚠️ Треба піднатиснути."]))
+            else:
+                cry = random.choice(cries.get("one_win", ["📌 Непогано, працюємо далі!"]))
+
+            # 4. Збираємо красиве табло аналітики
+            reply_text = (
+                f"✅ **Звіт прийнято і записано!**\n"
+                f"⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n"
+                f"📊 **Аналітика виконання плану:**\n"
+                f"🛒 **Торгівля:** {fact_trade:.0f} з {plan_trade:.0f} грн ({p_trade}%) — {marker_trade}\n"
+                f"📰 **Передплата:** {fact_sub:.0f} з {plan_sub:.0f} шт ({p_sub}%) — {marker_sub}\n"
+                f"⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n"
+                f"{cry}"
+            )
+        else:
+            # Якщо планів немає в таблиці — звичайна стандартна відповідь
+            reply_text = (
+                f"✅ **Звіт прийнято і записано!**\n"
+                f"🛒 Торгівля: {fact_trade:.0f} грн.\n"
+                f"📰 Передплата: {fact_sub:.0f} шт.\n"
+                f"*(План на сьогодні не знайдено)*"
+            )
+
+        # Надсилаємо аналітику миттєво як підтвердження прийому звіту
+        await event.reply(reply_text)
+
         if not already:
             await self._schedule_followups(
                 day, group_id, sender.id, person, parsed, event
@@ -476,15 +551,20 @@ class ShiftReportBot:
         group_id: str,
         telegram_id: int,
         person: Person,
-        parsed: ParsedReport,
+        parsed: dict,
         event: events.NewMessage.Event,
     ) -> None:
         checks: list[tuple[str, list]] = []
-        if parsed.zero_trade:
+        
+        # Перевіряємо нулі через .get() як у звичайному словнику
+        fact_trade = float(parsed.get("trade", 0.0))
+        fact_sub = float(parsed.get("subscription", 0.0))
+        
+        if fact_trade == 0:
             checks.append(
                 ("trade", self.cfg.messages.get("zero_trade_followups", []))
             )
-        if parsed.zero_prepayment:
+        if fact_sub == 0:
             checks.append(
                 ("prepayment", self.cfg.messages.get("zero_prepayment_followups", []))
             )

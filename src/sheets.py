@@ -75,3 +75,37 @@ class SheetsWriter:
             ],
             value_input_option="USER_ENTERED",
         )
+
+    def load_daily_plans(self) -> dict[str, dict[str, float]]:
+        """Зчитує плани по торгівлі та передплаті з вкладки 'ПЛАНИ' за допомогою gspread"""
+        try:
+            # Оскільки self._sheet — це вкладка "Звіти", ми через її властивість .spreadsheet
+            # можемо легко переключитися на сусідню вкладку "ПЛАНИ"
+            plans_sheet = self._sheet.spreadsheet.worksheet("ПЛАНИ")
+            
+            # Витягуємо всі матричні дані з цієї вкладки (включаючи шапку)
+            all_values = plans_sheet.get_all_values()
+            if not all_values or len(all_values) < 2:
+                return {}
+
+            plans = {}
+            # Пропускаємо перший рядок (шапку) і йдемо по кожному рядку
+            for row in all_values[1:]:
+                # Перевіряємо, щоб рядок мав хоча б 4 стовпчики і перший стовпчик (Код) не був порожнім
+                if len(row) >= 4 and row[0].strip():
+                    branch_code = str(row[0]).strip()
+                    try:
+                        # Конвертуємо дані, замінюючи коми на крапки (для Катерин Федорівн, якщо вони впишуть 100,5)
+                        trade_plan = float(str(row[2]).strip().replace(",", "."))
+                        sub_plan = float(str(row[3]).strip().replace(",", "."))
+                        
+                        plans[branch_code] = {
+                            "trade": trade_plan,
+                            "prepayment": sub_plan
+                        }
+                    except ValueError:
+                        continue
+            return plans
+        except Exception as e:
+            print(f"[ERROR] Не вдалося завантажити плани з вкладки ПЛАНИ: {e}")
+            return {}
