@@ -1,16 +1,186 @@
-# group: stationary | mobile (як у config/groups.yaml)
+# group: stationary | mobile
 branches:
   - group: stationary
+    code: "77202"
+    name: "Болехів"
+    work_weekdays: [0, 1, 2, 3, 4, 5]
+
+  - group: stationary
+    code: "77510"
+    name: "Велика Тур'я"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77552"
+    name: "Вигода"
+    work_weekdays: [0, 1, 2, 3, 4, 5]
+
+  - group: stationary
+    code: "77502"
+    name: "Долина-2"
+    work_weekdays: [0, 1, 2, 3, 4, 5, 6]
+
+  - group: stationary
     code: "77503"
-    name: "Долина 3"
-    work_weekdays: [0, 1, 2, 3, 4]
+    name: "Долина-3"
+    work_weekdays: [0, 1, 2, 3, 4, 5, 6]
 
   - group: stationary
     code: "77504"
-    name: "Долина 4"
-    work_weekdays: [0, 1, 2, 3, 4]
+    name: "Долина-4"
+    work_weekdays: [0, 1, 2, 3, 4, 5, 6]
+
+  - group: stationary
+    code: "77540"
+    name: "Княжолука"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77542"
+    name: "Кропивник"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77551"
+    name: "Мала Тур'я"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77210"
+    name: "Міжріччя"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77554"
+    name: "Новошин"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77523"
+    name: "Солуків"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77531"
+    name: "Станківці"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77543"
+    name: "Старий Мізунь"
+    work_weekdays: [1, 2, 3, 4]
+
+  - group: stationary
+    code: "77220"
+    name: "Тисів"
+    work_weekdays: [1, 2, 3, 4]
+
+  - group: stationary
+    code: "77512"
+    name: "Тростянець"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77516"
+    name: "Раків"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77624"
+    name: "Спас"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77623"
+    name: "Грабів"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77653"
+    name: "Липовиця"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77621"
+    name: "Верхній Струтин"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77622"
+    name: "Лоп'янка"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77650"
+    name: "Ілемня"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77601"
+    name: "Рожнятів"
+    work_weekdays: [1, 2, 3, 4, 5]
+
+  - group: stationary
+    code: "77605"
+    name: "Сваричів"
+    work_weekdays: [1, 2, 3, 4, 5]
+
+  - group: stationary
+    code: "77620"
+    name: "Нижній Струтин"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77631"
+    name: "Рівня"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77635"
+    name: "Петранка"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77640"
+    name: "Цінева"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77662"
+    name: "Перегінське"
+    work_weekdays: [1, 2, 3, 4, 5]
+
+  - group: stationary
+    code: "77670"
+    name: "Небилів"
+    work_weekdays: [1, 3, 5]
+
+  - group: stationary
+    code: "77673"
+    name: "Ясень"
+    work_weekdays: [1, 2, 3, 4, 5]
 
   - group: mobile
-    code: "M001"
-    name: "Пересувне відділення (приклад)"
-    work_weekdays: [0, 1, 2, 3, 4, 5]
+    code: "76545"
+    name: "ПВПЗ 15"
+    work_weekdays: [1, 2, 3, 4, 5]
+
+  - group: mobile
+    code: "76546"
+    name: "ПВПЗ 16"
+    work_weekdays: [1, 2, 3, 4, 5]
+
+  - group: mobile
+    code: "76547"
+    name: "ПВПЗ 17"
+    work_weekdays: [1, 2, 3, 4, 5]
+
+  - group: mobile
+    code: "76548"
+    name: "ПВПЗ 18"
+    work_weekdays: [1, 2, 3, 4, 5]
+
+  - group: mobile
+    code: "76594"
+    name: "ПВПЗ 64"
+    work_weekdays: [1, 2, 3, 4, 5]

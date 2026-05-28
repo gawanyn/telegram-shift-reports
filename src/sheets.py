@@ -66,11 +66,11 @@ class SheetsWriter:
                 group_title,
                 display_name,
                 str(telegram_id),
-                parsed.branch_code,
-                parsed.branch_name,
-                parsed.pension_paid,
-                parsed.trade_uah,
-                parsed.prepayment_units,
+                parsed.get("id"),                 # Змінено: безпечно беремо ID
+                parsed.get("location"),           # Змінено: назву села
+                parsed.get("pension", 0.0),        # Змінено: суму пенсії
+                parsed.get("trade", 0.0),          # Змінено: суму торгівлі
+                parsed.get("subscription", 0.0),   # Змінено: кількість передплати
                 raw_text,
             ],
             value_input_option="USER_ENTERED",

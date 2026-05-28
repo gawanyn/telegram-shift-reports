@@ -210,19 +210,36 @@ class ShiftReportBot:
             await self._job_tag_missing_for_group(group)
 
     async def _job_tag_missing_for_group(self, group: ChatGroup) -> None:
-        day, _ = await self._init_today_state(group.id)
-        if self.state.missing_tag_sent(day, group.id):
-            return
-        missing_ids = self.state.missing_responses(day, group.id)
+        day = today_local(self.cfg, self._now())
+        
+        # 1. Беремо ВСІХ людей цієї групи прямо з конфігу people.yaml
+        all_people = [p for p in self.cfg.people if p.group == group.id]
+        
+        missing_ids = []
+        for person in all_people:
+            if not person.telegram_id:
+                continue
+            # 2. Перевіряємо, чи є відмітка про зданий звіт у базі
+            if not self.state.has_responded(day, group.id, person.telegram_id):
+                missing_ids.append(person.telegram_id)
+
+        # 3. Якщо боржників реально немає
         if not missing_ids:
+            await self.client.send_message(
+                group.chat_id, 
+                "✅ Всі відділення групи здали звіти! Дякую."
+            )
             return
+
+        # 4. Якщо боржники є — тегаємо їх красиво
         mentions = self._format_mentions(group.id, missing_ids)
         template = self.cfg.message_for_group(group.id, "missing_in_group")
+        
         await self.client.send_message(
             group.chat_id,
             template.format(mentions=mentions),
+            parse_mode="md"
         )
-        self.state.mark_missing_tag_sent(day, group.id)
 
     async def job_send_dm(self) -> None:
         for group in self.cfg.groups:
@@ -275,6 +292,12 @@ class ShiftReportBot:
             return False
 
         logger.info("Команда %s у [%s]", cmd, group_id)
+        
+        # === ЗАХИСТ ВІД КРИВИХ ID: підставляємо реальний ID чату ===
+        if group and event.chat_id:
+            group.chat_id = event.chat_id
+        # ==========================================================
+        
         result = action()
         if asyncio.iscoroutine(result):
             await result
@@ -315,6 +338,12 @@ class ShiftReportBot:
             and sender.id == self._my_id
             and await self._try_admin_command(event, group_id)
         ):
+            
+            try:
+                await event.delete()
+            except Exception as e:
+                logger.warning(f"Не вдалося видалити команду: {e}")
+
             return
         if not isinstance(sender, User) or sender.bot:
             return
@@ -346,6 +375,7 @@ class ShiftReportBot:
             return
 
         parsed = parse_report(raw)
+
         if parsed is None:
             logger.warning(
                 "Не розпізнано звіт від %s [%s]: %s",
@@ -366,11 +396,11 @@ class ShiftReportBot:
             group_id,
             sender.id,
             {
-                "branch_code": parsed.branch_code,
-                "branch_name": parsed.branch_name,
-                "pension_paid": parsed.pension_paid,
-                "trade_uah": parsed.trade_uah,
-                "prepayment_units": parsed.prepayment_units,
+                "branch_code": parsed.get("id"),
+                "branch_name": parsed.get("location"),
+                "pension_paid": parsed.get("pension", 0.0),
+                "trade_uah": parsed.get("trade", 0.0),
+                "prepayment_units": parsed.get("subscription", 0.0),
             },
             now,
         )
@@ -395,12 +425,10 @@ class ShiftReportBot:
                 logger.error("Помилка запису в таблицю: %s", exc)
 
         logger.info(
-            "Звіт OK: %s [%s] торгівля=%s передплата=%s → таблиця=%s",
-            person.display_name,
-            group_id,
-            parsed.trade_uah,
-            parsed.prepayment_units,
-            "так" if sheet_ok else ("ні" if self._sheets else "вимкнено"),
+            f"Звіт OK: {person.display_name} [{group_id}] "
+            f"пенсія={parsed.get('pension', 0.0)} "
+            f"торгівля={parsed.get('trade', 0.0)} "
+            f"передплата={parsed.get('subscription', 0.0)} → таблиця=так"
         )
 
         if not already:
@@ -466,8 +494,12 @@ class ShiftReportBot:
         parts: list[str] = []
         for tid in telegram_ids:
             person = self._person_by_group_user.get((group_id, tid))
-            if person and person.username:
-                parts.append(f"@{person.username}")
+            if person:
+                if person.username:
+                    parts.append(f"@{person.username}")
+                else:
+                    # Замість "id" підставляємо реальне ім'я з конфігу:
+                    parts.append(f"[{person.display_name}](tg://user?id={tid})")
             else:
-                parts.append(f"[id](tg://user?id={tid})")
+                parts.append(f"[Користувач {tid}](tg://user?id={tid})")
         return " ".join(parts)
