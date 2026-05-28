@@ -194,16 +194,50 @@ class ShiftReportBot:
             await self._job_send_reminder_for_group(group)
 
     async def _job_send_reminder_for_group(self, group: ChatGroup) -> None:
-        day, expected = await self._init_today_state(group.id)
+        day = today_local(self.cfg, self._now())
+        
+        # 1. Отримуємо список людей, які сьогодні мають працювати
+        expected = expected_people_today(self.cfg, group.id, day)
+        
         if not expected:
-            logger.info("[%s] %s: вихідний день, звітів не чекаємо", group.id, day)
+            logger.info("[%s] %s: за графіком сьогодні вихідний у всіх відділень", group.id, day)
             return
-        if self.state.reminder_sent(day, group.id):
-            return
-        text = self.cfg.message_for_group(group.id, "reminder")
-        await self.client.send_message(group.chat_id, text)
+
+        # 2. Обходимо message_for_group і беремо СИРИЙ словник повідомлень групи
+        group_msgs = self.cfg.messages.get(group.id, {}) if hasattr(self.cfg, "messages") else {}
+        
+        # Якщо структура в конфігу плоска, або шукаємо в підгрупі:
+        if not group_msgs and hasattr(self.cfg, "messages"):
+            raw_reminder = self.cfg.messages.get("reminder")
+        else:
+            raw_reminder = group_msgs.get("reminder")
+
+        # Якщо не знайшли в словнику, падаємо на стандартний метод
+        if not raw_reminder:
+            raw_reminder = self.cfg.message_for_group(group.id, "reminder")
+        
+        # 3. Вибираємо випадковий рядок (тепер це точно буде чистий список або рядок)
+        if isinstance(raw_reminder, (list, tuple)):
+            base_text = random.choice(raw_reminder)
+        else:
+            base_text = str(raw_reminder)
+        
+        # 4. Формуємо красивий список працюючих відділень з емодзі
+        branches_list = "\n".join(f"🏢 {person.display_name}" for person in expected)
+        
+        # 5. Склеюємо все до купи через акуратну тонку лінію-роздільник
+        final_text = (
+            f"{base_text}\n"
+            f"⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n"
+            f"📋 **Сьогодні на контролі:**\n"
+            f"{branches_list}"
+        )
+        
+        # 6. Надсилаємо сформований текст у чат
+        await self.client.send_message(group.chat_id, final_text, parse_mode="md")
+        
         self.state.mark_reminder_sent(day, group.id)
-        logger.info("Нагадування [%s] за %s", group.id, day)
+        logger.info("Нагадування з випадковим текстом та списком [%s] за %s", group.id, day)
 
     async def job_tag_missing(self) -> None:
         for group in self.cfg.groups:
