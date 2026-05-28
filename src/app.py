@@ -500,23 +500,50 @@ class ShiftReportBot:
             plan_trade = branch_plans.get("trade", 0.0)
             plan_sub = branch_plans.get("prepayment", 0.0)
 
-            # 1. Рахуємо торгівлю
+            # 1. Розрахунок та статус для ТОРГІВЛІ
             p_trade = round((fact_trade / plan_trade) * 100) if plan_trade > 0 else 100
-            status_trade = "overfulfilled" if p_trade >= 100 else ("normal" if p_trade >= 70 else "low")
+            if p_trade >= 100:
+                status_trade = "overfulfilled"
+            elif p_trade >= 90:
+                status_trade = "normal"
+            elif p_trade >= 50:
+                status_trade = "attention"
+            else:
+                status_trade = "critical"
             marker_trade = markers.get(status_trade, "")
 
-            # 2. Рахуємо передплату
+            # 2. Розрахунок та статус для ПЕРЕДПЛАТИ
             p_sub = round((fact_sub / plan_sub) * 100) if plan_sub > 0 else 100
-            status_sub = "overfulfilled" if p_sub >= 100 else ("normal" if p_sub >= 70 else "low")
+            if p_sub >= 100:
+                status_sub = "overfulfilled"
+            elif p_sub >= 90:
+                status_sub = "normal"
+            elif p_sub >= 50:
+                status_sub = "attention"
+            else:
+                status_sub = "critical"
             marker_sub = markers.get(status_sub, "")
 
-            # 3. Визначаємо фінальний бойовий клич команди
-            if status_trade != "low" and status_sub != "low":
-                cry = random.choice(cries.get("both_win", ["💪 Так тримати!"]))
-            elif status_trade == "low" and status_sub == "low":
-                cry = random.choice(cries.get("both_low", ["⚠️ Треба піднатиснути."]))
+            # 3. Визначаємо фінальний бойовий клич дня
+            
+            # ПЕРЕВІРКА НА ЧИСТИЙ НУЛЬ (якщо факт = 0, а план був > 0)
+            has_zero = (fact_trade == 0 and plan_trade > 0) or (fact_sub == 0 and plan_sub > 0)
+
+            if has_zero:
+                # Якщо є хоча б один нуль — беремо фразу з блоку zero_alert
+                cry = random.choice(cries.get("zero_alert", ["🛑 Нуль у звіті неприпустимий. Будь ласка, активізуйте роботу!"]))
+            
+            # Якщо нулів немає, але є критичне просідання (<50%)
+            elif status_trade == "critical" or status_sub == "critical":
+                cry = random.choice(cries.get("critical_alert", ["🚨 Необхідно терміново підтягнути показники!"]))
+            
+            # Якщо обидва показники відпрацьовані чудово (>=90%)
+            elif status_trade in ("overfulfilled", "normal") and status_sub in ("overfulfilled", "normal"):
+                cry = random.choice(cries.get("both_win", ["💪 Чудова робота, колеги!"]))
+            
+            # Середній варіант (50-89%, зону уваги)
             else:
-                cry = random.choice(cries.get("one_win", ["📌 Непогано, працюємо далі!"]))
+                cry = random.choice(cries.get("one_win", ["📌 Звіт прийнято. Працюємо далі."]))
 
             # 4. Збираємо красиве табло аналітики
             reply_text = (
