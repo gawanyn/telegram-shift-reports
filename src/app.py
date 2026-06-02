@@ -36,6 +36,7 @@ class ShiftReportBot:
         )
         self._chat_to_group: dict[int, str] = {}
         self._person_by_group_user: dict[tuple[str, int], Person] = {}
+        self._group_entities: dict[str, any] = {}
         self._sheets: SheetsWriter | None = None
         self._scheduler = AsyncIOScheduler(timezone=self.tz)
         self._followup_tasks: dict[tuple[str, str, int, str], asyncio.Task] = {}
@@ -71,25 +72,98 @@ class ShiftReportBot:
                 "Команди у робочому чаті (з вашого акаунта): "
                 "!нагадування  !хто  !лс  !скинути  !допомога"
             )
-            
+
+        await self._catch_up_missed_reports()
+
         await self.client.run_until_disconnected()
 
     async def _resolve_groups(self) -> None:
+        try:
+            logger.info("📦 Завантаження діалогів Telegram для пошуку чатів за назвою...")
+            dialogs = await self.client.get_dialogs()
+        except Exception as e:
+            logger.error("⚠️ Не вдалося завантажити діалоги: %s", e)
+            dialogs = []
+
         for group in self.cfg.groups:
             if group.chat_id is None:
                 raise RuntimeError(
                     f"Не задано {group.env_var} у .env для групи «{group.title}»"
                 )
-            chat_id = group.chat_id
-            if isinstance(chat_id, str):
-                entity = await self.client.get_entity(chat_id)
-                chat_id = entity.id
-                group.chat_id = chat_id
-            self._chat_to_group[int(chat_id)] = group.id
-            normalized = self._normalize_chat_id(int(chat_id))
-            if normalized != int(chat_id):
-                self._chat_to_group[normalized] = group.id
-            logger.info("Чат «%s» → %s", group.title, chat_id)
+
+            entity = None
+            target_title = group.title.strip().lower() if group.title else ""
+
+            # 1. Спробувати знайти чат у локальному кеші за назвою
+            if target_title:
+                for d in dialogs:
+                    if d.name and d.name.strip().lower() == target_title:
+                        entity = d.entity
+                        break
+
+            # 2. Якщо заданий username, спробувати його напряму
+            if not entity and isinstance(group.chat_id, str) and group.chat_id.startswith("@"): 
+                try:
+                    entity = await self.client.get_entity(group.chat_id)
+                except Exception as exc:
+                    logger.debug("Не вдалося знайти username %s: %s", group.chat_id, exc)
+
+            # 3. Якщо заданий числовий ID, пробуємо різні варіанти форматів
+            if not entity:
+                raw_chat_id = str(group.chat_id).strip()
+                numeric_id = None
+                try:
+                    if raw_chat_id.startswith("-100"):
+                        numeric_id = int(raw_chat_id)
+                    elif raw_chat_id.startswith("-"):
+                        numeric_id = int(raw_chat_id)
+                    else:
+                        numeric_id = int(raw_chat_id)
+                except ValueError:
+                    numeric_id = None
+
+                if numeric_id is not None:
+                    allowed_ids = {numeric_id, self._normalize_chat_id(numeric_id)}
+                    if numeric_id > 0:
+                        allowed_ids.update({-numeric_id, int(f"-100{numeric_id}")})
+                    elif str(numeric_id).startswith("-100"):
+                        allowed_ids.add(int(str(numeric_id).replace("-100", "-")))
+
+                    for d in dialogs:
+                        if d.id in allowed_ids or self._normalize_chat_id(d.id) in allowed_ids:
+                            entity = d.entity
+                            break
+
+                # 4. Якщо все ще нічого, пробуємо прямий виклик get_entity для ID
+                if not entity and numeric_id is not None:
+                    candidates = [numeric_id]
+                    if numeric_id > 0:
+                        candidates.append(int(f"-100{numeric_id}"))
+                        candidates.append(-numeric_id)
+                    elif str(numeric_id).startswith("-100"):
+                        candidates.append(int(str(numeric_id).replace("-100", "-")))
+
+                    for candidate in candidates:
+                        try:
+                            entity = await self.client.get_entity(candidate)
+                            break
+                        except Exception:
+                            continue
+
+            if not entity:
+                raise ValueError(
+                    f"❌ КАТАСТРОФА: Бот не зміг знайти чат «{group.title}» ні за назвою, ні за ID.\n"
+                    f"Переконайтеся, що ви з цього акаунта зайшли в чат або правильно вказали {group.env_var}."
+                )
+
+            self._group_entities[group.id] = entity
+            chat_id = entity.id
+            group.chat_id = chat_id
+
+            for cid in self._chat_ids_for_matching(int(chat_id)):
+                self._chat_to_group[cid] = group.id
+
+            logger.info("✅ Чат «%s» успішно підключено! (ID: %s)", group.title, chat_id)
 
     async def _resolve_people_ids(self) -> None:
         for person in self.cfg.people:
@@ -136,14 +210,26 @@ class ShiftReportBot:
         return chat_id
 
     def _group_for_chat(self, chat_id: int) -> str | None:
-        return self._chat_to_group.get(chat_id)
+        group_id = self._chat_to_group.get(chat_id)
+        if group_id is not None:
+            return group_id
+        return self._chat_to_group.get(self._normalize_chat_id(chat_id))
 
     def _chat_ids_for_matching(self, chat_id: int) -> list[int]:
-        ids = [chat_id]
-        normalized = self._normalize_chat_id(chat_id)
-        if normalized != chat_id:
-            ids.append(normalized)
-        return ids
+        ids = {chat_id}
+        raw = str(chat_id)
+
+        if chat_id > 0:
+            ids.add(-chat_id)
+            ids.add(int(f"-100{chat_id}"))
+        elif raw.startswith("-100"):
+            ids.add(int(raw[4:]))
+            ids.add(int("-" + raw[4:]))
+        else:
+            ids.add(abs(chat_id))
+            ids.add(int(f"-100{abs(chat_id)}"))
+
+        return sorted(ids)
 
     def _register_handlers(self) -> None:
         chat_ids: list[int] = []
@@ -276,9 +362,12 @@ class ShiftReportBot:
         mentions = self._format_mentions(group.id, missing_ids)
         template = self.cfg.message_for_group(group.id, "missing_in_group")
         
+        # 🔥 Динамічно беремо час відправки повідомлення (наприклад, 18:23)
+        current_time_str = self._now().strftime("%H:%M")
+        
         await self.client.send_message(
             group.chat_id,
-            template.format(mentions=mentions),
+            template.format(mentions=mentions, time=current_time_str),
             parse_mode="md"
         )
 
@@ -399,17 +488,31 @@ class ShiftReportBot:
             return
 
         person = self._person_by_group_user.get((group_id, sender.id))
+        retrospective = getattr(event, "retrospective", False)
         if not person:
-            logger.info(
-                "Ігнор id=%s у [%s]: немає в config/people.yaml",
-                sender.id,
-                group_id,
+            if not retrospective:
+                logger.info(
+                    "Ігнор id=%s у [%s]: немає в config/people.yaml",
+                    sender.id,
+                    group_id,
+                )
+                return
+            person = Person(
+                group=group_id,
+                display_name=sender_name,
+                username=getattr(sender, "username", None),
+                telegram_id=sender.id,
+                branch_code="",
             )
-            return
+            logger.info(
+                "Ретроспективно оброблюю повідомлення від невідомого користувача %s id=%s",
+                sender_name,
+                sender.id,
+            )
 
         day = today_local(self.cfg, self._now())
         expected = expected_people_today(self.cfg, group_id, day)
-        if person not in expected:
+        if person not in expected and not retrospective:
             logger.info(
                 "Ігнор %s [%s]: сьогодні не робочий день відділення",
                 person.display_name,
@@ -644,3 +747,153 @@ class ShiftReportBot:
             else:
                 parts.append(f"[Користувач {tid}](tg://user?id={tid})")
         return " ".join(parts)
+    
+    async def _catch_up_missed_reports(self) -> None:
+        """Автоматично перевіряє та обробляє звіти, надіслані сьогодні з 12:00 до моменту запуску бота"""
+        now_local = self._now()
+        day = today_local(self.cfg, now_local)
+        
+        target_time = datetime(
+            day.year, day.month, day.day, 12, 0, 0, tzinfo=self.tz
+        )
+        
+        logger.info("🤖 Запуск ретроспективної перевірки повідомлень з 12:00 за сьогодні (%s)...", day)
+
+        for group in self.cfg.groups:
+            # Беремо готову сутність, яку ми залізобетонно витягнули в _resolve_groups
+            chat_entity = self._group_entities.get(group.id)
+            if not chat_entity:
+                logger.warning("⚠️ Не знайдено збереженої сутності для групи [%s]", group.title)
+                continue
+
+            processed_reports: list[tuple[int, str, str, str]] = []
+            processed_report_keys: set[tuple[int, str]] = set()
+            if self._sheets:
+                try:
+                    processed_reports = self._sheets.load_processed_reports(
+                        day, group.title, group.id
+                    )
+                    logger.info(
+                        "[%s] Завантажено з Google Sheets вже опрацьованих звітів: %d",
+                        group.id,
+                        len(processed_reports),
+                    )
+                    for telegram_id, report_text, row_date, row_time in processed_reports:
+                        logger.info(
+                            "[%s] Опрацьований звіт з таблиці: sender_id=%s date=%s time=%s text=%s",
+                            group.id,
+                            telegram_id,
+                            row_date,
+                            row_time,
+                            report_text[:120],
+                        )
+                        processed_report_keys.add((telegram_id, report_text))
+                except Exception as e:
+                    logger.warning(
+                        "[%s] Не вдалося завантажити опрацьовані звіти з Google Sheets: %s",
+                        group.id,
+                        e,
+                    )
+
+            count_processed = 0
+            scanned_messages = 0
+            try:
+                # Читаємо історію через 100% валідну сутність чату
+                async for message in self.client.iter_messages(chat_entity):
+                    scanned_messages += 1
+                    msg_date_local = message.date.astimezone(self.tz)
+
+                    if msg_date_local < target_time:
+                        break
+
+                    if message.sender_id == self._my_id:
+                        continue
+
+                    sender_id = message.sender_id
+                    if not sender_id:
+                        continue
+
+                    if self.state.has_responded(day, group.id, sender_id):
+                        logger.debug(
+                            "Ігноровано ретроспективне повідомлення [%s] від %s: вже має відповідь.",
+                            group.id,
+                            sender_id,
+                        )
+                        continue
+
+                    raw_text = " ".join(str(message.message or "").split()).strip()
+                    if not raw_text:
+                        continue
+
+                    logger.info(
+                        "[%s] Сканую ретроспективне повідомлення від %s о %s: %s",
+                        group.id,
+                        sender_id,
+                        msg_date_local.strftime("%H:%M"),
+                        raw_text[:100],
+                    )
+
+                    normalized_text = raw_text.lower()
+                    if (sender_id, normalized_text) in processed_report_keys:
+                        logger.debug(
+                            "Пропуск ретроспективного повідомлення [%s] від %s: уже є у таблиці.",
+                            group.id,
+                            sender_id,
+                        )
+                        if not self.state.has_responded(day, group.id, sender_id):
+                            self.state.ensure_day(day, group.id, [sender_id])
+                            parsed = parse_report(raw_text) or {}
+                            self.state.mark_response(day, group.id, sender_id, parsed, msg_date_local)
+                        continue
+
+                    parsed = parse_report(raw_text)
+                    if parsed is None:
+                        logger.debug(
+                            "Ретроспективне повідомлення [%s] від %s не розпізнано як звіт: %s",
+                            group.id,
+                            sender_id,
+                            raw_text[:120],
+                        )
+                        continue
+
+                    logger.info(
+                        "📥 Знайдено пропущений звіт від sender_id=%s о %s. Обробляю...",
+                        sender_id,
+                        msg_date_local.strftime("%H:%M"),
+                    )
+                    
+                    class SimulatedEvent:
+                        def __init__(self, msg, cid, client):
+                            self.message = msg
+                            self.chat_id = cid
+                            self.id = msg.id
+                            self._client = client
+                            self.retrospective = True
+
+                        async def reply(self, text):
+                            await self.message.reply(text)
+
+                        async def get_sender(self):
+                            return await self.message.get_sender()
+
+                    simulated_event = SimulatedEvent(message, message.chat_id, self.client)
+                    await self._handle_group_message(simulated_event)
+                    count_processed += 1
+                    
+            except Exception as e:
+                logger.error("⚠️ Не вдалося прочитати історію чату [%s]: %s", group.title, e)
+                continue
+
+            if count_processed > 0:
+                logger.info(
+                    "[%s] Ретроспективну перевірку завершено. Скановано повідомлень: %d. Опрацьовано звітів: %d",
+                    group.id,
+                    scanned_messages,
+                    count_processed,
+                )
+            else:
+                logger.info(
+                    "[%s] Ретроспективну перевірку завершено. Скановано повідомлень: %d. Пропущених звітів не знайдено.",
+                    group.id,
+                    scanned_messages,
+                )

@@ -33,29 +33,35 @@ VALID_LOCATIONS = [
 
 # Ключові слова (корені слів) для пошуку показників
 KW_PENSION = [r'пенсі', r'пен']
-KW_TRADE = [r'торгівл', r'товар', r'продаж', r'друковані медіа', r'роздріб']
+KW_TRADE = [r'торгівл', r'торг', r'товар', r'продаж', r'друковані медіа', r'роздріб']
 KW_SUB = [r'передплат', r'переплат', r'підписк', r'передпл']
+
+NUMBER_PATTERN = r'\d{1,3}(?:[ \u00A0]\d{3})*(?:[\.,]\d+)?'
+
+
+def normalize_number(num_str: str) -> float:
+    normalized = re.sub(r'[ \u00A0]', '', num_str).replace(',', '.')
+    return float(normalized)
+
 
 def extract_amount(keywords, text):
     """
     Універсальна функція для витягування суми поруч із ключовими словами.
     Повертає float або None.
     """
-    # Варіант 1: Ключове слово -> цифра (наприклад: "Товар 150.50", "Торгівля- 1465грн")
-    pattern_forward = r'(?i)(?:' + '|'.join(keywords) + r')[^\d]*(\d+(?:[\.,]\d+)?)'
+    # Варіант 1: Ключове слово -> цифра (наприклад: "Товар 150.50", "Торгівля- 1 465 грн")
+    pattern_forward = rf'(?i)(?:{'|'.join(keywords)})[^\d\-]*({NUMBER_PATTERN})'
     match = re.search(pattern_forward, text)
     
     if match:
-        num_str = match.group(1).replace(',', '.')
-        return float(num_str)
+        return normalize_number(match.group(1))
         
     # Варіант 2: Цифра -> Ключове слово (наприклад: "1515-товар", "0 підписка")
-    pattern_backward = r'(?i)(\d+(?:[\.,]\d+)?)\s*(?:-|грн|шт)?\s*(?:' + '|'.join(keywords) + r')'
+    pattern_backward = rf'(?i)({NUMBER_PATTERN})\s*(?:-|грн|грн\.|грн,|шт|шт\.|кг)?\s*(?:{'|'.join(keywords)})'
     match_b = re.search(pattern_backward, text)
     
     if match_b:
-        num_str = match_b.group(1).replace(',', '.')
-        return float(num_str)
+        return normalize_number(match_b.group(1))
 
     return None
 
@@ -111,6 +117,10 @@ def parse_report(report_string):
         sub_val = extract_amount(KW_SUB, clean_text)
         if sub_val is not None:
             data["subscription"] = sub_val
+
+        # Якщо повідомлення не схоже на звіт, повертаємо None.
+        if not (data["id"] or data["location"] or pension_val is not None or trade_val is not None or sub_val is not None):
+            return None
 
     except Exception as e:
         # Якщо станеться будь-яка аномалія, парсер не впаде

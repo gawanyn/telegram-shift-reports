@@ -29,7 +29,9 @@ HEADERS = [
 class SheetsWriter:
     def __init__(self) -> None:
         spreadsheet_id = os.environ.get("GOOGLE_SPREADSHEET_ID", "").strip()
-        sheet_name = os.environ.get("GOOGLE_SHEET_NAME", "Звіти").strip()
+        sheet_name = os.environ.get("GOOGLE_REPORTS_SHEET_NAME", "").strip()
+        if not sheet_name:
+            sheet_name = os.environ.get("GOOGLE_SHEET_NAME", "Звіти").strip()
         creds_path = os.environ.get(
             "GOOGLE_SERVICE_ACCOUNT_FILE",
             str(ROOT / "credentials" / "service_account.json"),
@@ -41,8 +43,39 @@ class SheetsWriter:
 
         credentials = Credentials.from_service_account_file(creds_path, scopes=SCOPES)
         client = gspread.authorize(credentials)
-        self._sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        try:
+            self._sheet = spreadsheet.worksheet(sheet_name)
+        except gspread.WorksheetNotFound:
+            if not os.environ.get("GOOGLE_REPORTS_SHEET_NAME"):
+                worksheets = spreadsheet.worksheets()
+                if len(worksheets) == 1:
+                    self._sheet = worksheets[0]
+                else:
+                    available = [worksheet.title for worksheet in worksheets]
+                    raise RuntimeError(
+                        f"Вкладка Google Sheets '{sheet_name}' не знайдено. "
+                        f"Доступні вкладки: {available}"
+                    )
+            else:
+                raise RuntimeError(
+                    f"Вкладка Google Sheets '{sheet_name}' не знайдено. "
+                    "Перевірте GOOGLE_REPORTS_SHEET_NAME або GOOGLE_SHEET_NAME."
+                )
         self._ensure_headers()
+
+    def _normalize_sheet_value(self, raw: str | None) -> str:
+        return " ".join(str(raw or "").strip().lower().split())
+
+    def _matches_group_name(self, row_group: str, group_title: str, group_id: str | None = None) -> bool:
+        normalized_row_group = self._normalize_sheet_value(row_group)
+        if not normalized_row_group:
+            return False
+        if normalized_row_group == self._normalize_sheet_value(group_title):
+            return True
+        if group_id and normalized_row_group == self._normalize_sheet_value(group_id):
+            return True
+        return False
 
     def _ensure_headers(self) -> None:
         first = self._sheet.row_values(1)
@@ -79,9 +112,10 @@ class SheetsWriter:
     def load_daily_plans(self) -> dict[str, dict[str, float]]:
         """Зчитує плани по торгівлі та передплаті з вкладки 'ПЛАНИ' за допомогою gspread"""
         try:
-            # Оскільки self._sheet — це вкладка "Звіти", ми через її властивість .spreadsheet
-            # можемо легко переключитися на сусідню вкладку "ПЛАНИ"
-            plans_sheet = self._sheet.spreadsheet.worksheet("ПЛАНИ")
+            plans_sheet_name = os.environ.get("GOOGLE_PLANS_SHEET_NAME", "ПЛАНИ").strip()
+            # Оскільки self._sheet — це вкладка зі звітами, ми через її властивість .spreadsheet
+            # можемо легко переключитися на вкладку з планами.
+            plans_sheet = self._sheet.spreadsheet.worksheet(plans_sheet_name)
             
             # Витягуємо всі матричні дані з цієї вкладки (включаючи шапку)
             all_values = plans_sheet.get_all_values()
@@ -109,3 +143,37 @@ class SheetsWriter:
         except Exception as e:
             print(f"[ERROR] Не вдалося завантажити плани з вкладки ПЛАНИ: {e}")
             return {}
+
+    def load_processed_reports(
+        self, report_date: date, group_title: str, group_id: str | None = None
+    ) -> list[tuple[int, str, str, str]]:
+        """Завантажує вже записані звіти з аркуша для поточної дати і групи."""
+        try:
+            all_values = self._sheet.get_all_values()
+            if not all_values or len(all_values) < 2:
+                return []
+
+            processed: list[tuple[int, str, str, str]] = []
+            target_date = report_date.isoformat()
+            for row in all_values[1:]:
+                if len(row) < 11:
+                    continue
+                row_date = row[0].strip()
+                row_time = row[1].strip() if len(row) > 1 else ""
+                row_group = row[2].strip()
+                row_telegram_id = row[4].strip()
+                row_text = self._normalize_sheet_value(row[10])
+
+                if row_date != target_date:
+                    continue
+                if not self._matches_group_name(row_group, group_title, group_id):
+                    continue
+                try:
+                    telegram_id = int(row_telegram_id)
+                except ValueError:
+                    continue
+                processed.append((telegram_id, row_text, row_date, row_time))
+            return processed
+        except Exception as e:
+            print(f"[ERROR] Не вдалося завантажити оброблені звіти з Google Sheets: {e}")
+            return []

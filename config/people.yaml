@@ -14,9 +14,260 @@ people:
     telegram_id: 729521477
     branch_code: "77504"
 
-  # Додайте пересувних нижче, наприклад:
-  # - group: mobile
-  #   display_name: "Ім'я"
-  #   username: their_username
-  #   telegram_id: 123456789
-  #   branch_code: "M001"
+    # === БОЛЕХІВСЬКА ТА ДОЛИНСЬКА ДІЛЬНИЦІ ===
+  - group: stationary
+    display_name: "Тимків Оксана Миколаївна"
+    username: 
+    telegram_id: 
+    branch_code: "77202"
+
+  - group: stationary
+    display_name: "Бецин Галина Василівна"
+    username: 
+    telegram_id: 
+    branch_code: "77202"
+
+  - group: stationary
+    display_name: "Сенюк Іванна Іванівна"
+    username: 
+    telegram_id: 
+    branch_code: "77510"
+
+  - group: stationary
+    display_name: "Паньків Світлана Богданівна"
+    username: 
+    telegram_id: 
+    branch_code: "77552"
+
+  - group: stationary
+    display_name: "Пилячик Іванна Дмитрівна"
+    username: 
+    telegram_id: 
+    branch_code: "77502"
+
+  - group: stationary
+    display_name: "Дедюкіна Наталія Олегівна"
+    username: 
+    telegram_id: 
+    branch_code: "77502"
+
+  - group: stationary
+    display_name: "Олексин Мар'яна Іванівна"
+    username: 
+    telegram_id: 
+    branch_code: "77503"
+
+  - group: stationary
+    display_name: "Рожак Надія Євгенівна"
+    username: 
+    telegram_id: 
+    branch_code: "77503"
+
+  - group: stationary
+    display_name: "Чубик Марія Михайлівна"
+    username: 
+    telegram_id: 
+    branch_code: "77504"
+
+  - group: stationary
+    display_name: "Дяк Марія Василівна"
+    username: 
+    telegram_id: 
+    branch_code: "77504"
+
+  - group: stationary
+    display_name: "Хром'як Любов"
+    username: 
+    telegram_id: 
+    branch_code: "77540"
+
+  - group: stationary
+    display_name: "Золотюк Іванна Миронівна"
+    username: 
+    telegram_id: 
+    branch_code: "77542"
+
+  - group: stationary
+    display_name: "Мазур Мирослав Михайлович"
+    username: 
+    telegram_id: 
+    branch_code: "77551"
+
+  - group: stationary
+    display_name: "Костів Ольга Василівна"
+    username: 
+    telegram_id: 
+    branch_code: "77210"
+
+  - group: stationary
+    display_name: "Ференц Любов Ярославівна"
+    username: 
+    telegram_id: 
+    branch_code: "77554"
+
+  - group: stationary
+    display_name: "Вінтонів Катерина Федорівна"
+    username: 
+    telegram_id: 
+    branch_code: "77523"
+
+  - group: stationary
+    display_name: "Яремко Мар'яна Миколаївна"
+    username: 
+    telegram_id: 
+    branch_code: "77531"
+
+  - group: stationary
+    display_name: "Цап Наталія Іванівна"
+    username: 
+    telegram_id: 
+    branch_code: "77543"
+
+  - group: stationary
+    display_name: "Гав'як Галина Богданівна"
+    username: 
+    telegram_id: 
+    branch_code: "77220"
+
+  - group: stationary
+    display_name: "Макосій Алла Іванівна"
+    username: 
+    telegram_id: 
+    branch_code: "77512"
+
+  - group: stationary
+    display_name: "Фреїв Надія"
+    username: 
+    telegram_id: 
+    branch_code: "77516"
+
+
+  # === РОЖНЯТІВСЬКА ДІЛЬНИЦЯ ===
+  - group: stationary
+    display_name: "Лучко Оксана Петрівна"
+    username: 
+    telegram_id: 
+    branch_code: "77624"
+
+  - group: stationary
+    display_name: "Боян Леся Володимирівна"
+    username: 
+    telegram_id: 
+    branch_code: "77623"
+
+  - group: stationary
+    display_name: "Дирів Віталій Михайлович"
+    username: 
+    telegram_id: 
+    branch_code: "77653"
+
+  - group: stationary
+    display_name: "Грелюк Іванна Василівна"
+    username: 
+    telegram_id: 
+    branch_code: "77621"
+
+  - group: stationary
+    display_name: "Сушко Тетяна Василівна"
+    username: 
+    telegram_id: 
+    branch_code: "77622"
+
+  - group: stationary
+    display_name: "Лущ Леся Василівна"
+    username: 
+    telegram_id: 
+    branch_code: "77650"
+
+  - group: stationary
+    display_name: "Бобик Андрій"
+    username: 
+    telegram_id: 
+    branch_code: "77601"
+
+  - group: stationary
+    display_name: "Курташ Орест"
+    username: 
+    telegram_id: 
+    branch_code: "77605"
+
+  - group: stationary
+    display_name: "Максимович Мар'яна Володимирівна"
+    username: 
+    telegram_id: 
+    branch_code: "77620"
+
+  - group: stationary
+    display_name: "Боринець Марія Богданівна"
+    username: 
+    telegram_id: 
+    branch_code: "77631"
+
+  - group: stationary
+    display_name: "Шпак Галина Володимирівна"
+    username: 
+    telegram_id: 
+    branch_code: "77635"
+
+  - group: stationary
+    display_name: "Дутка Любов Мирославівна"
+    username: 
+    telegram_id: 
+    branch_code: "77640"
+
+  - group: stationary
+    display_name: "Ріпей Оксана Ярославівна"
+    username: 
+    telegram_id: 
+    branch_code: "77662"
+
+  - group: stationary
+    display_name: "Вагилевич Марта Дмитрівна"
+    username: 
+    telegram_id: 
+    branch_code: "77670"
+
+  - group: stationary
+    display_name: "Смик Оксана Ігорівна"
+    username: 
+    telegram_id: 
+    branch_code: "77673"
+
+
+  # === ПЕРЕСУВНІ ВІДДІЛЕННЯ (ПВПЗ) ===
+  - group: stationary
+    display_name: "Чоп Людмила Василівна"
+    username: 
+    telegram_id: 
+    branch_code: "76545"
+
+  - group: stationary
+    display_name: "Стасів Наталія Анатоліївна"
+    username: 
+    telegram_id: 
+    branch_code: "76546"
+
+  - group: stationary
+    display_name: "Костюк Любомира Степанівна"
+    username: 
+    telegram_id: 
+    branch_code: "76547"
+
+  - group: stationary
+    display_name: "Ткач Світлана Степанівна"
+    username: 
+    telegram_id: 
+    branch_code: "76548"
+
+  - group: stationary
+    display_name: "Пипало Наталія Зіновіївна"
+    username: 
+    telegram_id: 
+    branch_code: "76594"
+    
+    # Додайте пересувних нижче, наприклад:
+    # - group: mobile
+    #   display_name: "Ім'я"
+    #   username: their_username
+    #   telegram_id: 123456789
+    #   branch_code: "M001"
