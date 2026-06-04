@@ -115,7 +115,7 @@ def parse_report(report_string):
             data["subscription"] = sub_val
 
         # Якщо повідомлення не схоже на звіт, повертаємо None.
-        if not (data["id"] or data["location"] or pension_val is not None or trade_val is not None or sub_val is not None):
+        if pension_val is None and trade_val is None and sub_val is None:
             return None
 
     except Exception as e:
