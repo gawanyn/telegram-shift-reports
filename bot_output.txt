@@ -1,0 +1,105 @@
+2026-06-02 21:11:20,594 INFO src.app: Завантажено планів для 0 відділень
+2026-06-02 21:11:20,595 INFO telethon.network.mtprotosender: Connecting to 149.154.167.51:443/TcpFull...
+2026-06-02 21:11:20,648 INFO telethon.network.mtprotosender: Connection to 149.154.167.51:443/TcpFull complete!
+2026-06-02 21:11:21,210 INFO src.app: \U0001f4e6 Завантаження діалогів Telegram для пошуку чатів за назвою...
+2026-06-02 21:11:22,487 INFO src.app: \u2705 Чат «Стаціонарні автоматизовані» успішно підключено! (ID: 4990204733)
+2026-06-02 21:11:22,489 INFO src.app: Зареєстровано Старий [stationary] id=5854549861
+2026-06-02 21:11:22,490 INFO src.app: Зареєстровано Кохана\U0001f48b [stationary] id=729521477
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Тимків Оксана Миколаївна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Бецин Галина Василівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Сенюк Іванна Іванівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Паньків Світлана Богданівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Пилячик Іванна Дмитрівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Дедюкіна Наталія Олегівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Олексин Мар'яна Іванівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Рожак Надія Євгенівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Чубик Марія Михайлівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Дяк Марія Василівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,490 WARNING src.app: Пропущено Хром'як Любов [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Золотюк Іванна Миронівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Мазур Мирослав Михайлович [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Костів Ольга Василівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Ференц Любов Ярославівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Вінтонів Катерина Федорівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Яремко Мар'яна Миколаївна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Цап Наталія Іванівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Гав'як Галина Богданівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Макосій Алла Іванівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Фреїв Надія [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Лучко Оксана Петрівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Боян Леся Володимирівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Дирів Віталій Михайлович [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Грелюк Іванна Василівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Сушко Тетяна Василівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Лущ Леся Василівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Бобик Андрій [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,491 WARNING src.app: Пропущено Курташ Орест [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Максимович Мар'яна Володимирівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Боринець Марія Богданівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Шпак Галина Володимирівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Дутка Любов Мирославівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Ріпей Оксана Ярославівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Вагилевич Марта Дмитрівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Смик Оксана Ігорівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Чоп Людмила Василівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Стасів Наталія Анатоліївна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Костюк Любомира Степанівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Ткач Світлана Степанівна [stationary]: немає telegram_id і username
+2026-06-02 21:11:22,492 WARNING src.app: Пропущено Пипало Наталія Зіновіївна [stationary]: немає telegram_id і username
+2026-06-02 21:11:24,881 INFO src.app: Завантажено планів для 37 відділень
+2026-06-02 21:11:24,881 INFO src.app: Слухаємо повідомлення в чатах: [-1004990204733, -4990204733, 4990204733]
+2026-06-02 21:11:24,883 INFO apscheduler.scheduler: Scheduler started
+2026-06-02 21:11:24,883 INFO src.app: Userbot запущено. Чати: stationary=4990204733
+2026-06-02 21:11:24,883 INFO src.app: Команди у робочому чаті (з вашого акаунта): !нагадування  !хто  !лс  !скинути  !допомога
+2026-06-02 21:11:24,883 INFO src.app: \U0001f916 Запуск ретроспективної перевірки повідомлень з 12:00 за сьогодні (2026-06-02)...
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Завантажено з Google Sheets вже опрацьованих звітів: 8
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=15:12:22 raw_text=77503, долина-3, виплача пенсія — 1200, торгівля — 0 грн, передплата — 200 шт. normalized_text=77503, долина-3, виплача пенсія — 1200, торгівля — 0 грн, передплата — 200 шт.
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=18:20:46 raw_text=!нагадування normalized_text=!нагадування
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=18:21:33 raw_text=77503, долина-3, виплача пенсія — 1200, торгівля — 0 грн, передплата — 200 шт. normalized_text=77503, долина-3, виплача пенсія — 1200, торгівля — 0 грн, передплата — 200 шт.
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=18:50:13 raw_text=77531, станківці, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт normalized_text=77531, станківці, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=19:33:19 raw_text=77531, станківці, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт normalized_text=77531, станківці, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=19:39:51 raw_text=77542, кропивник, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт normalized_text=77542, кропивник, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт
+2026-06-02 21:11:25,130 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=19:49:18 raw_text=77542, кропивник, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт normalized_text=77542, кропивник, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт
+2026-06-02 21:11:25,131 INFO src.app: [stationary] Опрацьований звіт з таблиці: sender_id=5854549861 date=2026-06-02 time=20:51:09 raw_text=77502, долина-2, виплачена пенсія — 120, торгівля — 10 грн, передплата — 20 шт. normalized_text=77502, долина-2, виплачена пенсія — 120, торгівля — 10 грн, передплата — 20 шт.
+2026-06-02 21:11:25,131 INFO src.app: [stationary] \U0001f4ca Завантажено 5 ключів для дублікат-перевірки (sender_id, normalized_text):
+2026-06-02 21:11:25,131 INFO src.app: [stationary] Ключ у таблиці: sender_id=5854549861 text=!нагадування
+2026-06-02 21:11:25,131 INFO src.app: [stationary] Ключ у таблиці: sender_id=5854549861 text=77502, долина-2, виплачена пенсія — 120, торгівля — 10 грн, передплата — 20 шт.
+2026-06-02 21:11:25,131 INFO src.app: [stationary] Ключ у таблиці: sender_id=5854549861 text=77503, долина-3, виплача пенсія — 1200, торгівля — 0 грн, передплата — 200 шт.
+2026-06-02 21:11:25,131 INFO src.app: [stationary] Ключ у таблиці: sender_id=5854549861 text=77531, станківці, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт
+2026-06-02 21:11:25,131 INFO src.app: [stationary] Ключ у таблиці: sender_id=5854549861 text=77542, кропивник, виплачена пенсія — 1200, торгівля — 0 грн, передплата — 200 шт
+2026-06-02 21:11:25,288 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,288 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,289 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,290 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,291 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,292 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,292 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,292 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,292 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,292 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,292 INFO src.app: [stationary] \U0001f916 Повідомлення від бота, пропускаємо
+2026-06-02 21:11:25,292 INFO src.app: [stationary] \u23ed\ufe0f У state вже відповідав: sender_id=5854549861
+2026-06-02 21:11:25,292 INFO src.app: [stationary] Ретроспективну перевірку завершено. Статистика 36 повідомлень: від_бота=20, без_sender=0, порожні=0, вже_відповідь=15, у_таблиці=0, не_розпізнані=0, обработено=0

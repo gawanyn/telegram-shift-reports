@@ -5,6 +5,6 @@ groups:
     title: "Стаціонарні автоматизовані"
     env_var: WORK_GROUP_STATIONARY_ID
 
-  # - id: mobile
-  #   title: "Пересувні відділення (ПВПЗ)"
-  #   env_var: WORK_GROUP_MOBILE_ID
+  - id: mobile
+    title: "Пересувні відділення (ПВПЗ)"
+    env_var: WORK_GROUP_MOBILE_ID

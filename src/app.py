@@ -407,6 +407,10 @@ class ShiftReportBot:
             "!скинути": lambda: self._cmd_reset_day(group_id),
             "!reset": lambda: self._cmd_reset_day(group_id),
             "!плани_апдейт": lambda: self._cmd_reload_plans(event),
+            "!айді": lambda: self._cmd_get_ids(event, group_id),
+            "!ids": lambda: self._cmd_get_ids(event, group_id),
+            "!чистка": lambda: self._cmd_clear_messages(event),
+            "!clear": lambda: self._cmd_clear_messages(event),
         }
         if cmd in ("!допомога", "!help"):
             await event.reply(
@@ -414,7 +418,9 @@ class ShiftReportBot:
                 "!нагадування — нагадування в чат\n"
                 "!хто — теги без звіту\n"
                 "!лс — особисті повідомлення\n"
-                "!скинути — скинути стан на сьогодні"
+                "!скинути — скинути стан на сьогодні\n"
+                "!айді — отримати список ID учасників у Збережені\n"
+                "!чистка [число] — видалити останні повідомлення (макс 50)"
             )
             return True
 
@@ -438,6 +444,79 @@ class ShiftReportBot:
         day = today_local(self.cfg, self._now())
         self.state.reset_day(day, group_id)
         logger.info("Скинуто стан [%s] за %s", group_id, day)
+
+    async def _cmd_get_ids(self, event: events.NewMessage.Event, group_id: str) -> None:
+        """Збирає ID всіх учасників чату і відправляє адміну в Збережені повідомлення"""
+        import os
+        
+        chat = await event.get_chat()
+        lines = [f"📋 **Список ID учасників групи «{chat.title}»:**\n"]
+        
+        # Проходимося по всіх учасниках чату
+        async for user in self.client.iter_participants(chat):
+            if not user.bot:
+                # Клеїмо ім'я, юзернейм та номер телефону, якщо він відкритий
+                name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "Без імені"
+                username = f" (@{user.username})" if user.username else ""
+                phone = f" 📱+{user.phone}" if user.phone else ""
+                
+                lines.append(f"👤 {name}{username}{phone} ➡️ `{user.id}`")
+                
+        text = "\n".join(lines)
+        
+        try:
+            # Відправляємо собі у "Saved Messages" ("me" - це вбудований аліас Телеграму для збережених)
+            if len(text) > 4000:
+                # Якщо повідомлення занадто довге (більше 4000 символів), відправляємо як текстовий файл
+                file_name = f"ids_{group_id}.txt"
+                with open(file_name, "w", encoding="utf-8") as f:
+                    f.write(text.replace("**", "").replace("`", ""))
+                
+                await self.client.send_message("me", f"Файл з ID для групи {group_id}", file=file_name)
+                os.remove(file_name)
+            else:
+                # Якщо влазить у ліміт - відправляємо звичайним текстом
+                await self.client.send_message("me", text)
+                
+            # Відповідаємо в робочий чат, щоб ти зрозумів, що команда пройшла, і за 3 секунди прибираємо за собою
+            msg = await event.reply("✅ Список ID успішно надіслано вам у **Збережені повідомлення**.")
+            await asyncio.sleep(3)
+            await msg.delete()
+            
+        except Exception as e:
+            logger.error("Помилка відправки ID: %s", e)
+            await event.reply("❌ Не вдалося відправити список ID. Перевірте логи.")
+
+    async def _cmd_clear_messages(self, event: events.NewMessage.Event) -> None:
+        """Видаляє задану кількість ВЛАСНИХ останніх повідомлень у чаті."""
+        raw = (event.message.message or "").strip()
+        parts = raw.split()
+        
+        # За замовчуванням видаляємо 5 повідомлень
+        limit = 5
+        if len(parts) > 1 and parts[1].isdigit():
+            limit = int(parts[1])
+            
+        # Запобіжник, щоб випадково не знести забагато
+        if limit > 50:
+            limit = 50
+            
+        try:
+            chat = await event.get_chat()
+            
+            # 🔥 ДОДАНО ФІЛЬТР: from_user='me'. 
+            # Бот проігнорує чужі звіти і знайде саме `limit` твоїх останніх повідомлень.
+            messages = await self.client.get_messages(chat, limit=limit, from_user='me', max_id=event.id)
+            
+            if messages:
+                await self.client.delete_messages(chat, messages)
+                logger.info("🧹 Видалено %d ВЛАСНИХ повідомлень у чаті «%s»", len(messages), chat.title)
+                
+        except Exception as e:
+            logger.error("Помилка видалення повідомлень: %s", e)
+            err_msg = await event.reply("❌ Не вдалося видалити повідомлення. Перевірте логи.")
+            await asyncio.sleep(3)
+            await err_msg.delete()
 
     async def _cmd_reload_plans(self, event: events.NewMessage.Event) -> None:
         if self._sheets:
@@ -780,14 +859,33 @@ class ShiftReportBot:
                     )
                     for telegram_id, report_text, row_date, row_time in processed_reports:
                         logger.info(
-                            "[%s] Опрацьований звіт з таблиці: sender_id=%s date=%s time=%s text=%s",
+                            "[%s] Опрацьований звіт з таблиці: sender_id=%s date=%s time=%s",
                             group.id,
                             telegram_id,
                             row_date,
                             row_time,
-                            report_text[:120],
                         )
-                        processed_report_keys.add((telegram_id, report_text))
+                        # 🔥 Новий унікальний ключ: (ID відправника, Дата, Час)
+                        processed_report_keys.add((telegram_id, str(row_date).strip(), str(row_time).strip()))
+                    
+                    logger.info(
+                        "[%s] 📊 Завантажено %d ключів для дублікат-перевірки (sender_id, date, time)",
+                        group.id,
+                        len(processed_report_keys),
+                    )
+                    
+                    logger.info(
+                        "[%s] 📊 Завантажено %d ключів для дублікат-перевірки (sender_id, normalized_text):",
+                        group.id,
+                        len(processed_report_keys),
+                    )
+                    for key in sorted(processed_report_keys)[:5]:
+                        logger.info(
+                            "[%s] Ключ у таблиці: sender_id=%s text=%s",
+                            group.id,
+                            key[0],
+                            key[1][:80],
+                        )
                 except Exception as e:
                     logger.warning(
                         "[%s] Не вдалося завантажити опрацьовані звіти з Google Sheets: %s",
@@ -797,6 +895,12 @@ class ShiftReportBot:
 
             count_processed = 0
             scanned_messages = 0
+            count_bot_messages = 0
+            count_no_sender = 0
+            count_already_responded = 0
+            count_already_in_sheet = 0
+            count_empty_text = 0
+            count_not_recognized = 0
             try:
                 # Читаємо історію через 100% валідну сутність чату
                 async for message in self.client.iter_messages(chat_entity):
@@ -807,38 +911,37 @@ class ShiftReportBot:
                         break
 
                     if message.sender_id == self._my_id:
+                        count_bot_messages += 1
+                        logger.info("[%s] 🤖 Повідомлення від бота, пропускаємо", group.id)
                         continue
 
                     sender_id = message.sender_id
                     if not sender_id:
-                        continue
-
-                    if self.state.has_responded(day, group.id, sender_id):
-                        logger.debug(
-                            "Ігноровано ретроспективне повідомлення [%s] від %s: вже має відповідь.",
-                            group.id,
-                            sender_id,
-                        )
+                        count_no_sender += 1
+                        logger.info("[%s] ⚠️ Без sender_id, пропускаємо", group.id)
                         continue
 
                     raw_text = " ".join(str(message.message or "").split()).strip()
                     if not raw_text:
+                        count_empty_text += 1
+                        logger.info("[%s] ⚠️ Порожнє повідомлення від %s", group.id, sender_id)
                         continue
 
-                    logger.info(
-                        "[%s] Сканую ретроспективне повідомлення від %s о %s: %s",
-                        group.id,
-                        sender_id,
-                        msg_date_local.strftime("%H:%M"),
-                        raw_text[:100],
-                    )
+                    # 🔥 Формуємо дату та час повідомлення точно в такому форматі, як вони записані в таблиці
+                    msg_date_str = msg_date_local.strftime("%Y-%m-%d")
+                    msg_time_str = msg_date_local.strftime("%H:%M:%S")
 
-                    normalized_text = raw_text.lower()
-                    if (sender_id, normalized_text) in processed_report_keys:
-                        logger.debug(
-                            "Пропуск ретроспективного повідомлення [%s] від %s: уже є у таблиці.",
+                    # Новий ключ пошуку
+                    search_key = (sender_id, msg_date_str, msg_time_str)
+                    
+                    if search_key in processed_report_keys:
+                        count_already_in_sheet += 1
+                        logger.info(
+                            "[%s] ✅ Знайдено у таблиці дублікат за часом: sender_id=%s date=%s time=%s",
                             group.id,
                             sender_id,
+                            msg_date_str,
+                            msg_time_str,
                         )
                         if not self.state.has_responded(day, group.id, sender_id):
                             self.state.ensure_day(day, group.id, [sender_id])
@@ -846,8 +949,19 @@ class ShiftReportBot:
                             self.state.mark_response(day, group.id, sender_id, parsed, msg_date_local)
                         continue
 
+                    # Then check state (for messages after the Google Sheets check)
+                    if self.state.has_responded(day, group.id, sender_id):
+                        count_already_responded += 1
+                        logger.info(
+                            "[%s] ⏭️ У state вже відповідав: sender_id=%s",
+                            group.id,
+                            sender_id,
+                        )
+                        continue
+
                     parsed = parse_report(raw_text)
                     if parsed is None:
+                        count_not_recognized += 1
                         logger.debug(
                             "Ретроспективне повідомлення [%s] від %s не розпізнано як звіт: %s",
                             group.id,
@@ -857,9 +971,9 @@ class ShiftReportBot:
                         continue
 
                     logger.info(
-                        "📥 Знайдено пропущений звіт від sender_id=%s о %s. Обробляю...",
+                        "📥 Знайдено новий звіт (не у таблиці): sender_id=%s text=%s",
                         sender_id,
-                        msg_date_local.strftime("%H:%M"),
+                        raw_text[:80],
                     )
                     
                     class SimulatedEvent:
@@ -871,7 +985,8 @@ class ShiftReportBot:
                             self.retrospective = True
 
                         async def reply(self, text):
-                            await self.message.reply(text)
+                            # 🔥 Просто ігноруємо текст відповіді (режим "тихого пилососа")
+                            pass
 
                         async def get_sender(self):
                             return await self.message.get_sender()
@@ -884,16 +999,16 @@ class ShiftReportBot:
                 logger.error("⚠️ Не вдалося прочитати історію чату [%s]: %s", group.title, e)
                 continue
 
-            if count_processed > 0:
-                logger.info(
-                    "[%s] Ретроспективну перевірку завершено. Скановано повідомлень: %d. Опрацьовано звітів: %d",
-                    group.id,
-                    scanned_messages,
-                    count_processed,
-                )
-            else:
-                logger.info(
-                    "[%s] Ретроспективну перевірку завершено. Скановано повідомлень: %d. Пропущених звітів не знайдено.",
-                    group.id,
-                    scanned_messages,
-                )
+            logger.info(
+                "[%s] Ретроспективну перевірку завершено. Статистика %d повідомлень: "
+                "від_бота=%d, без_sender=%d, порожні=%d, вже_відповідь=%d, у_таблиці=%d, не_розпізнані=%d, обработено=%d",
+                group.id,
+                scanned_messages,
+                count_bot_messages,
+                count_no_sender,
+                count_empty_text,
+                count_already_responded,
+                count_already_in_sheet,
+                count_not_recognized,
+                count_processed,
+            )
