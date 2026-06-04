@@ -342,15 +342,34 @@ class ShiftReportBot:
         # 1. Беремо ВСІХ людей цієї групи прямо з конфігу people.yaml
         all_people = [p for p in self.cfg.people if p.group == group.id]
         
-        missing_ids = []
+        # 2. 🔥 Групуємо людей за індексом відділення (branch_code)
+        branch_status = {}
         for person in all_people:
-            if not person.telegram_id:
+            if not person.branch_code or not person.telegram_id:
                 continue
-            # 2. Перевіряємо, чи є відмітка про зданий звіт у базі
-            if not self.state.has_responded(day, group.id, person.telegram_id):
-                missing_ids.append(person.telegram_id)
+            
+            if person.branch_code not in branch_status:
+                branch_status[person.branch_code] = {
+                    "responded": False,
+                    "telegram_ids": []
+                }
+            
+            # Додаємо ID працівника до його відділення
+            branch_status[person.branch_code]["telegram_ids"].append(person.telegram_id)
+            
+            # Якщо хоча б хтось ОДИН із цього відділення здав звіт — все відділення зелене!
+            if self.state.has_responded(day, group.id, person.telegram_id):
+                branch_status[person.branch_code]["responded"] = True
 
-        # 3. Якщо боржників реально немає
+        # 3. Збираємо ID боржників тільки з тих відділень, які не здали
+        missing_ids = []
+        for b_code, status in branch_status.items():
+            if not status["responded"]:
+                # Якщо звіт не здано, тегаємо всіх прив'язаних до цього відділення
+                # (бо бот не знає, чия сьогодні зміна)
+                missing_ids.extend(status["telegram_ids"])
+
+        # Якщо всі відділення закриті
         if not missing_ids:
             await self.client.send_message(
                 group.chat_id, 
@@ -358,11 +377,10 @@ class ShiftReportBot:
             )
             return
 
-        # 4. Якщо боржники є — тегаємо їх красиво
+        # Формуємо красивий список тегів
         mentions = self._format_mentions(group.id, missing_ids)
         template = self.cfg.message_for_group(group.id, "missing_in_group")
         
-        # 🔥 Динамічно беремо час відправки повідомлення (наприклад, 18:23)
         current_time_str = self._now().strftime("%H:%M")
         
         await self.client.send_message(
@@ -377,13 +395,39 @@ class ShiftReportBot:
 
     async def _job_send_dm_for_group(self, group: ChatGroup) -> None:
         day, _ = await self._init_today_state(group.id)
+        
+        all_people = [p for p in self.cfg.people if p.group == group.id]
+        
+        # 🔥 Така сама логіка групування для особистих повідомлень
+        branch_status = {}
+        for person in all_people:
+            if not person.branch_code or not person.telegram_id:
+                continue
+            
+            if person.branch_code not in branch_status:
+                branch_status[person.branch_code] = {
+                    "responded": False,
+                    "telegram_ids": []
+                }
+            
+            branch_status[person.branch_code]["telegram_ids"].append(person.telegram_id)
+            
+            if self.state.has_responded(day, group.id, person.telegram_id):
+                branch_status[person.branch_code]["responded"] = True
+
         text = self.cfg.message_for_group(group.id, "dm_missing")
-        for tid in self.state.pending_dm(day, group.id):
-            try:
-                await self.client.send_message(tid, text)
-                self.state.mark_dm_sent(day, group.id, tid)
-            except Exception as exc:
-                logger.error("DM [%s] не надіслано %s: %s", group.id, tid, exc)
+        
+        # Відправляємо повідомлення тільки тим, чиє відділення ще не відзвітувало
+        for b_code, status in branch_status.items():
+            if not status["responded"]:
+                for tid in status["telegram_ids"]:
+                    # Перевіряємо, чи ми вже писали цій людині сьогодні
+                    if tid in self.state.pending_dm(day, group.id):
+                        try:
+                            await self.client.send_message(tid, text)
+                            self.state.mark_dm_sent(day, group.id, tid)
+                        except Exception as exc:
+                            logger.error("DM [%s] не надіслано %s: %s", group.id, tid, exc)
 
     async def _try_admin_command(
         self, event: events.NewMessage.Event, group_id: str
@@ -805,11 +849,23 @@ class ShiftReportBot:
     ) -> None:
         try:
             await asyncio.sleep(delay)
+            
+            # 🔥 Формуємо повноцінний клікабельний тег для сповіщення
+            if person.username:
+                mention = f"@{person.username}"
+            elif person.telegram_id:
+                mention = f"[{person.display_name}](tg://user?id={person.telegram_id})"
+            else:
+                mention = person.display_name
+
+            # Підставляємо тег замість звичайного тексту
             text = template.format(
-                name=person.display_name,
+                name=mention,
                 username=person.username or "",
             )
-            await event.reply(text)
+            
+            # Обов'язково вказуємо parse_mode="md", щоб Телеграм перетворив посилання на тег
+            await event.reply(text, parse_mode="md")
         finally:
             self._followup_tasks.pop(key, None)
 
