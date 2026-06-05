@@ -355,40 +355,39 @@ class ShiftReportBot:
             await self._job_tag_missing_for_group(group)
 
     async def _job_tag_missing_for_group(self, group: ChatGroup) -> None:
+        
         day = today_local(self.cfg, self._now())
         
-        # 1. Беремо тільки тих, чиї ВІДДІЛЕННЯ працюють СЬОГОДНІ (перевірка графіка)
+        # 1. Беремо всіх, чиї відділення працюють сьогодні
         expected_today = expected_people_today(self.cfg, group.id, day)
         
-        # Відсіюємо відпускників з тих, хто сьогодні за графіком працює
-        all_people = [p for p in expected_today if getattr(p, 'is_active', True)]
-        
-        # 2. 🔥 Групуємо людей за індексом відділення (branch_code)
         branch_status = {}
-        for person in all_people:
+        
+        # 2. Проходимося по ВСІХ працівниках (і активних, і неактивних)
+        for person in expected_today:
             if not person.branch_code or not person.telegram_id:
                 continue
             
             if person.branch_code not in branch_status:
                 branch_status[person.branch_code] = {
                     "responded": False,
-                    "telegram_ids": []
+                    "active_telegram_ids": []
                 }
             
-            # Додаємо ID працівника до його відділення
-            branch_status[person.branch_code]["telegram_ids"].append(person.telegram_id)
-            
-            # Якщо хоча б хтось ОДИН із цього відділення здав звіт — все відділення зелене!
+            # 🔥 Перевіряємо, чи здав звіт ХОЧ ХТОСЬ із відділення (навіть заступниця у відпустці)
             if self.state.has_responded(day, group.id, person.telegram_id):
                 branch_status[person.branch_code]["responded"] = True
 
-        # 3. Збираємо ID боржників тільки з тих відділень, які не здали
+            # 🔥 Але у список "кого тегати, якщо звіту немає" додаємо ТІЛЬКИ активних
+            if getattr(person, 'is_active', True):
+                branch_status[person.branch_code]["active_telegram_ids"].append(person.telegram_id)
+
+        # 3. Збираємо боржників тільки з тих відділень, які не здали
         missing_ids = []
         for b_code, status in branch_status.items():
-            if not status["responded"]:
-                # Якщо звіт не здано, тегаємо всіх прив'язаних до цього відділення
-                # (бо бот не знає, чия сьогодні зміна)
-                missing_ids.extend(status["telegram_ids"])
+            # Якщо звіту немає, тегаємо активних працівників
+            if not status["responded"] and status["active_telegram_ids"]:
+                missing_ids.extend(status["active_telegram_ids"])
 
         # Якщо всі відділення закриті
         if not missing_ids:
