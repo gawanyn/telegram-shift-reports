@@ -148,7 +148,7 @@ branches:
   - group: stationary
     code: "77662"
     name: "Перегінське"
-    work_weekdays: [1, 2, 3, 4, 5]
+    work_weekdays: [0, 1, 2, 3, 4, 5]
 
   - group: stationary
     code: "77670"

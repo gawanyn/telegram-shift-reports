@@ -4,7 +4,7 @@ timezone: Europe/Kyiv
 schedule_enabled: false
 
 # Поки false — усі з people.yaml «очікуються» щодня (графік відділень не перевіряється)
-branch_calendar_enabled: false
+branch_calendar_enabled: true
 
 # Коли увімкнете schedule_enabled: true:
 reminder_time: "14:00"

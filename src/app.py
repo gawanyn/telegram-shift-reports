@@ -292,6 +292,9 @@ class ShiftReportBot:
         # 1. Отримуємо список людей, які сьогодні мають працювати
         expected = expected_people_today(self.cfg, group.id, day)
         
+        # 🔥 ФІЛЬТР: залишаємо тільки тих, хто зараз не у відпустці/лікарняному
+        expected = [p for p in expected if p.is_active]
+        
         if not expected:
             logger.info("[%s] %s: за графіком сьогодні вихідний у всіх відділень", group.id, day)
             return
@@ -315,8 +318,23 @@ class ShiftReportBot:
         else:
             base_text = str(raw_reminder)
         
-        # 4. Формуємо красивий список працюючих відділень з емодзі
-        branches_list = "\n".join(f"🏢 {person.display_name}" for person in expected)
+        # 4. Формуємо красивий список працюючих відділень з тегами
+        lines = []
+        for person in expected:
+            # Створюємо клікабельний пуш-тег
+            if person.username:
+                mention = f"@{person.username}"
+            elif person.telegram_id:
+                mention = f"[{person.display_name}](tg://user?id={person.telegram_id})"
+            else:
+                mention = person.display_name
+                
+            # Беремо індекс ВПЗ, якщо він є
+            branch = person.branch_code if person.branch_code else "ВПЗ"
+            
+            lines.append(f"🏢 {branch} — {mention}")
+            
+        branches_list = "\n".join(lines)
         
         # 5. Склеюємо все до купи через акуратну тонку лінію-роздільник
         final_text = (
@@ -339,8 +357,11 @@ class ShiftReportBot:
     async def _job_tag_missing_for_group(self, group: ChatGroup) -> None:
         day = today_local(self.cfg, self._now())
         
-        # 1. Беремо ВСІХ людей цієї групи прямо з конфігу people.yaml
-        all_people = [p for p in self.cfg.people if p.group == group.id]
+        # 1. Беремо тільки тих, чиї ВІДДІЛЕННЯ працюють СЬОГОДНІ (перевірка графіка)
+        expected_today = expected_people_today(self.cfg, group.id, day)
+        
+        # Відсіюємо відпускників з тих, хто сьогодні за графіком працює
+        all_people = [p for p in expected_today if getattr(p, 'is_active', True)]
         
         # 2. 🔥 Групуємо людей за індексом відділення (branch_code)
         branch_status = {}
@@ -396,7 +417,8 @@ class ShiftReportBot:
     async def _job_send_dm_for_group(self, group: ChatGroup) -> None:
         day, _ = await self._init_today_state(group.id)
         
-        all_people = [p for p in self.cfg.people if p.group == group.id]
+        # Отримуємо тільки активних
+        all_people = [p for p in self.cfg.people if p.group == group.id and p.is_active]
         
         # 🔥 Така сама логіка групування для особистих повідомлень
         branch_status = {}
@@ -1040,8 +1062,8 @@ class ShiftReportBot:
                             self._client = client
                             self.retrospective = True
 
-                        async def reply(self, text):
-                            # 🔥 Просто ігноруємо текст відповіді (режим "тихого пилососа")
+                        # 🔥 ФІКС: тепер заглушка приймає будь-які аргументи і просто їх ігнорує
+                        async def reply(self, *args, **kwargs):
                             pass
 
                         async def get_sender(self):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Dict, Optional
 
 import yaml
 
@@ -23,9 +23,10 @@ class ChatGroup:
 class Person:
     group: str
     display_name: str
-    username: str | None
-    telegram_id: int | None
-    branch_code: str
+    username: Optional[str] = None
+    telegram_id: Optional[int] = None
+    branch_code: Optional[str] = None
+    is_active: bool = True
 
 
 @dataclass
@@ -143,6 +144,7 @@ def load_config() -> AppConfig:
                 username=_normalize_username(item.get("username")),
                 telegram_id=int(tid) if tid is not None else None,
                 branch_code=str(item["branch_code"]),
+                is_active=item.get("is_active", True)
             )
         )
 

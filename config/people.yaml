@@ -1,18 +1,21 @@
 # group: stationary | mobile
 # telegram_id — надійніше за username (дізнатися: @userinfobot або з логів після першого звіту)
 # username — без @, опційно
+# is_active — true (працює) або false (у відпустці/на лікарняному)
 people:
   # - group: stationary
   #   display_name: "Старий"
   #   username: gridRunner0
   #   telegram_id: 5854549861
   #   branch_code: "77503"
+  #   is_active: true
 
   # - group: stationary
   #   display_name: "Кохана💋"
   #   username: 
   #   telegram_id: 729521477
   #   branch_code: "77504"
+  #   is_active: true
 
   # === БОЛЕХІВСЬКА ТА ДОЛИНСЬКА ДІЛЬНИЦІ ===
   - group: stationary
@@ -20,132 +23,154 @@ people:
     username: 
     telegram_id: 5136864076
     branch_code: "77202"
+    is_active: true
 
   # - group: stationary
   #   display_name: "Бецин Галина Василівна"
   #   username: 
   #   telegram_id: 
   #   branch_code: "77202"
+  #   is_active: true
 
   - group: stationary
     display_name: "Сенюк Іванна Іванівна"
     username: 
     telegram_id: 8319935549
     branch_code: "77510"
+    is_active: true
 
   - group: stationary
     display_name: "Паньків Світлана Богданівна"
     username: 
     telegram_id: 6139395066
     branch_code: "77552"
+    is_active: true
 
   - group: stationary
     display_name: "Пилячик Іванна Дмитрівна"
     username: 
     telegram_id: 5198524423
     branch_code: "77502"
+    is_active: true
 
   - group: stationary
     display_name: "Дедюкіна Наталія Олегівна"
     username: natali19892024
     telegram_id: 5117052607
     branch_code: "77502"
+    is_active: false  # 🔥 Тимчасово відсутня (лікарняний)
 
   - group: stationary
     display_name: "Олексин Мар'яна Іванівна"
     username: 
     telegram_id: 5403736906
     branch_code: "77503"
+    is_active: true
 
   - group: stationary
     display_name: "Рожак Надія Євгенівна"
     username: 
     telegram_id: 7154799159
     branch_code: "77503"
+    is_active: false  # 🔥 Тимчасово відсутня (лікарняний)
 
   - group: stationary
     display_name: "Чубик Марія Михайлівна"
     username: 
     telegram_id: 5218872132
     branch_code: "77504"
+    is_active: true
 
   - group: stationary
     display_name: "Дяк Марія Василівна"
     username: 
     telegram_id: 1047340106
     branch_code: "77504"
+    is_active: false  # 🔥 Тимчасово відсутня (лікарняний)
 
   - group: stationary
     display_name: "Хром'як Любов"
     username: 
     telegram_id: 1609223194
     branch_code: "77540"
+    is_active: true
 
   - group: stationary
     display_name: "Золотюк Іванна Миронівна"
     username: 
     telegram_id: 5132434367
     branch_code: "77542"
+    is_active: true
 
   - group: stationary
     display_name: "Мазур Мирослав Михайлович"
     username: 
     telegram_id: 5257478296
     branch_code: "77551"
+    is_active: true
 
   - group: stationary
     display_name: "Костів Ольга Василівна"
     username: 
     telegram_id: 7698304069
     branch_code: "77210"
+    is_active: true
 
   - group: stationary
     display_name: "Ференц Любов Ярославівна"
     username: 
     telegram_id: 6937614965
     branch_code: "77554"
+    is_active: true
 
   - group: stationary
     display_name: "Вінтонів Катерина Федорівна"
     username: 
     telegram_id: 745701794
     branch_code: "77523"
+    is_active: true
 
   - group: stationary
     display_name: "Яремко Мар'яна Миколаївна"
     username: 
     telegram_id: 5762919931
     branch_code: "77531"
+    is_active: false  # 🔥 Тимчасово відсутня (лікарняний)
 
   - group: stationary
     display_name: "Мізунська Ірина Тарасівна"
     username: 
     telegram_id: 7678833103
     branch_code: "77531"
+    is_active: true
 
   - group: stationary
     display_name: "Цап Наталія Іванівна"
     username: 
     telegram_id: 8739306378
     branch_code: "77543"
+    is_active: true
 
   - group: stationary
     display_name: "Гав'як Галина Богданівна"
     username: 
     telegram_id: 873956987
     branch_code: "77220"
+    is_active: true
 
   - group: stationary
     display_name: "Макосій Алла Іванівна"
     username: 
     telegram_id: 5475617422
     branch_code: "77512"
+    is_active: true
 
   - group: stationary
     display_name: "Фреїв Надія"
     username: 
     telegram_id: 5532035814
     branch_code: "77516"
+    is_active: true
 
 
   # === РОЖНЯТІВСЬКА ДІЛЬНИЦЯ ===
@@ -154,90 +179,105 @@ people:
     username: 
     telegram_id: 5313644407
     branch_code: "77624"
+    is_active: true
 
   - group: stationary
     display_name: "Боян Леся Володимирівна"
     username: 
     telegram_id: 6605298550
     branch_code: "77623"
+    is_active: true
 
   - group: stationary
     display_name: "Дирів Віталій Михайлович"
     username: VitalijDM
     telegram_id: 5242054685
     branch_code: "77653"
+    is_active: true
 
   - group: stationary
     display_name: "Грелюк Іванна Василівна"
     username: 
     telegram_id: 5821695558
     branch_code: "77621"
+    is_active: true
 
   - group: stationary
     display_name: "Сушко Тетяна Василівна"
     username: 
     telegram_id: 6062614229
     branch_code: "77622"
+    is_active: true
 
   - group: stationary
     display_name: "Лущ Леся Василівна"
     username: 
     telegram_id: 7624335038
     branch_code: "77650"
+    is_active: true
 
   - group: stationary
     display_name: "Бобик Андрій"
     username: Andriy100
     telegram_id: 311522703
     branch_code: "77601"
+    is_active: true
 
   - group: stationary
     display_name: "Курташ Орест"
     username: orest_kurtash
     telegram_id: 1388398719
     branch_code: "77605"
+    is_active: true
 
   - group: stationary
     display_name: "Максимович Мар'яна Володимирівна"
     username: 
     telegram_id: 7894356677
     branch_code: "77620"
+    is_active: true
 
   - group: stationary
     display_name: "Боринець Марія Богданівна"
     username: 
     telegram_id: 7239002724
     branch_code: "77631"
+    is_active: true
 
   - group: stationary
     display_name: "Шпак Галина Володимирівна"
     username: Halya_shpak
     telegram_id: 1927440547
     branch_code: "77635"
+    is_active: true
 
   - group: stationary
     display_name: "Дутка Любов Мирославівна"
     username: 
     telegram_id: 5633815509
     branch_code: "77640"
+    is_active: true
 
   - group: stationary
     display_name: "Ріпей Оксана Ярославівна"
     username: 
     telegram_id: 8055031030
     branch_code: "77662"
+    is_active: true
 
   - group: stationary
     display_name: "Вагилевич Марта Дмитрівна"
     username: 
     telegram_id: 7709971829
     branch_code: "77670"
+    is_active: true
 
   - group: stationary
     display_name: "Смик Оксана Ігорівна"
     username: 
     telegram_id: 5101661669
     branch_code: "77673"
+    is_active: true
 
 
   # === ПЕРЕСУВНІ ВІДДІЛЕННЯ (ПВПЗ) ===
@@ -246,33 +286,39 @@ people:
     username: 
     telegram_id: 1692308357
     branch_code: "76545"
+    is_active: true
 
   - group: mobile
     display_name: "Сеник Юлія Ярославівна"
     username: 
     telegram_id: 7504594480
     branch_code: "76546"
+    is_active: true
 
   - group: mobile
     display_name: "Костюк Любомира Степанівна"
     username: 
     telegram_id: 1695438562
     branch_code: "76547"
+    is_active: false  # 🔥 Тимчасово відсутня (відпустка)
 
   - group: mobile
     display_name: "Войтович Олег"
     username: olhqq
     telegram_id: 336547767
     branch_code: "76547"
+    is_active: true
 
   - group: mobile
     display_name: "Ткач Світлана Степанівна"
     username: 
     telegram_id: 1656088351
     branch_code: "76548"
+    is_active: true
 
   - group: mobile
     display_name: "Пипало Наталія Зіновіївна"
     username: 
     telegram_id: 934348070
     branch_code: "76594"
+    is_active: true
