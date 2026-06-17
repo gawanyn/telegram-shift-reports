@@ -22,8 +22,6 @@ from .sheets import SheetsWriter
 from .state import StateStore
 
 logger = logging.getLogger(__name__)
-
-
 class ShiftReportBot:
     def __init__(self) -> None:
         self.cfg = load_config()

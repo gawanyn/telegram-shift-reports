@@ -221,7 +221,7 @@ people:
     username: Andriy100
     telegram_id: 311522703
     branch_code: "77601"
-    is_active: true
+    is_active: false  # Звільнений)
 
   - group: stationary
     display_name: "Курташ Орест"

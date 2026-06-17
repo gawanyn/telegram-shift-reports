@@ -68,12 +68,12 @@ branches:
   - group: stationary
     code: "77543"
     name: "Старий Мізунь"
-    work_weekdays: [1, 2, 3, 4]
+    work_weekdays: [1, 3, 4]
 
   - group: stationary
     code: "77220"
     name: "Тисів"
-    work_weekdays: [1, 2, 3, 4]
+    work_weekdays: [1, 3, 4]
 
   - group: stationary
     code: "77512"
