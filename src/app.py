@@ -22,6 +22,23 @@ from .sheets import SheetsWriter
 from .state import StateStore
 
 logger = logging.getLogger(__name__)
+METRIC_META = {
+    "trade": {
+        "label": "Торгівля",
+        "emoji": "🛒",
+        "unit": "грн",
+        "plan_key": "trade",
+        "zero_followup_key": "zero_trade_followups",
+    },
+    "subscription": {
+        "label": "Передплата",
+        "emoji": "📰",
+        "unit": "шт",
+        "plan_key": "prepayment",
+        "zero_followup_key": "zero_prepayment_followups",
+    },
+}
+
 class ShiftReportBot:
     def __init__(self) -> None:
         self.cfg = load_config()
@@ -719,97 +736,98 @@ class ShiftReportBot:
             except Exception as exc:
                 logger.error("Помилка запису в таблицю: %s", exc)
 
+        metric_values = {
+            metric: float(parsed.get(metric, 0.0)) for metric in self.cfg.enabled_metrics
+        }
+        metric_scores = []
+        for metric, value in metric_values.items():
+            meta = METRIC_META.get(metric)
+            if meta:
+                metric_scores.append(f"{meta['label']}={value}")
+
         logger.info(
-            f"Звіт OK: {person.display_name} [{group_id}] "
-            f"пенсія={parsed.get('pension', 0.0)} "
-            f"торгівля={parsed.get('trade', 0.0)} "
-            f"передплата={parsed.get('subscription', 0.0)} → таблиця=так"
+            "Звіт OK: %s [%s] пенсія=%s %s → таблиця=так",
+            person.display_name,
+            group_id,
+            parsed.get("pension", 0.0),
+            ", ".join(metric_scores) if metric_scores else "",
         )
 
         b_code = parsed.get("id", "")
         if b_code:
             b_code = str(b_code).strip()
-            
-        fact_trade = float(parsed.get("trade", 0.0))
-        fact_sub = float(parsed.get("subscription", 0.0))
 
-        # Шукаємо місячні плани у нашому кеші daily_plans
         branch_plans = self.daily_plans.get(b_code)
-
-        # Отримуємо блоки з конфігу messages.yaml
         msg_group = self.cfg.messages.get(group_id, {}) if hasattr(self.cfg, "messages") else {}
         markers = msg_group.get("performance_markers", self.cfg.messages.get("performance_markers", {}))
         cries = msg_group.get("battle_cries", self.cfg.messages.get("battle_cries", {}))
 
+        active_metrics = [metric for metric in self.cfg.enabled_metrics if metric in METRIC_META]
+        if not active_metrics:
+            active_metrics = ["trade", "subscription"]
+
         if branch_plans and markers and cries:
-            plan_trade = branch_plans.get("trade", 0.0)
-            plan_sub = branch_plans.get("prepayment", 0.0)
-
-            # 1. Розрахунок та статус для ТОРГІВЛІ
-            p_trade = round((fact_trade / plan_trade) * 100) if plan_trade > 0 else 100
-            if p_trade >= 100:
-                status_trade = "overfulfilled"
-            elif p_trade >= 90:
-                status_trade = "normal"
-            elif p_trade >= 50:
-                status_trade = "attention"
-            else:
-                status_trade = "critical"
-            marker_trade = markers.get(status_trade, "")
-
-            # 2. Розрахунок та статус для ПЕРЕДПЛАТИ
-            p_sub = round((fact_sub / plan_sub) * 100) if plan_sub > 0 else 100
-            if p_sub >= 100:
-                status_sub = "overfulfilled"
-            elif p_sub >= 90:
-                status_sub = "normal"
-            elif p_sub >= 50:
-                status_sub = "attention"
-            else:
-                status_sub = "critical"
-            marker_sub = markers.get(status_sub, "")
-
-            # 3. Визначаємо фінальний бойовий клич дня
-            
-            # ПЕРЕВІРКА НА ЧИСТИЙ НУЛЬ (якщо факт = 0, а план був > 0)
-            has_zero = (fact_trade == 0 and plan_trade > 0) or (fact_sub == 0 and plan_sub > 0)
+            statuses: dict[str, str] = {}
+            metric_lines: list[str] = []
+            has_zero = False
+            for metric in active_metrics:
+                meta = METRIC_META[metric]
+                fact = float(parsed.get(metric, 0.0))
+                plan = float(branch_plans.get(meta["plan_key"], 0.0))
+                percentage = round((fact / plan) * 100) if plan > 0 else 100
+                if percentage >= 100:
+                    status = "overfulfilled"
+                elif percentage >= 90:
+                    status = "normal"
+                elif percentage >= 50:
+                    status = "attention"
+                else:
+                    status = "critical"
+                statuses[metric] = status
+                marker = markers.get(status, "")
+                metric_lines.append(
+                    f"{meta['emoji']} **{meta['label']}:** {fact:.0f} з {plan:.0f} {meta['unit']} ({percentage}%) — {marker}"
+                )
+                if fact == 0 and plan > 0:
+                    has_zero = True
 
             if has_zero:
-                # Якщо є хоча б один нуль — беремо фразу з блоку zero_alert
-                cry = random.choice(cries.get("zero_alert", ["🛑 Нуль у звіті неприпустимий. Будь ласка, активізуйте роботу!"]))
-            
-            # Якщо нулів немає, але є критичне просідання (<50%)
-            elif status_trade == "critical" or status_sub == "critical":
-                cry = random.choice(cries.get("critical_alert", ["🚨 Необхідно терміново підтягнути показники!"]))
-            
-            # Якщо обидва показники відпрацьовані чудово (>=90%)
-            elif status_trade in ("overfulfilled", "normal") and status_sub in ("overfulfilled", "normal"):
-                cry = random.choice(cries.get("both_win", ["💪 Чудова робота, колеги!"]))
-            
-            # Середній варіант (50-89%, зону уваги)
+                cry = random.choice(cries.get("zero_alert", ["🛑 Нуль у звіті неприпустимий. Будь ласка, активізуйте роботу! "]))
+            elif any(status == "critical" for status in statuses.values()):
+                if len(active_metrics) == 1:
+                    cry = random.choice(cries.get("single_critical", cries.get("critical_alert", ["🚨 Необхідно терміново підтягнути показники!"])))
+                else:
+                    cry = random.choice(cries.get("critical_alert", ["🚨 Необхідно терміново підтягнути показники!"]))
+            elif all(status in ("overfulfilled", "normal") for status in statuses.values()):
+                if len(active_metrics) == 1:
+                    cry = random.choice(cries.get("single_win", cries.get("both_win", ["💪 Чудова робота, колеги! "])))
+                else:
+                    cry = random.choice(cries.get("both_win", ["💪 Чудова робота, колеги! "]))
             else:
-                cry = random.choice(cries.get("one_win", ["📌 Звіт прийнято. Працюємо далі."]))
+                if len(active_metrics) == 1:
+                    cry = random.choice(cries.get("single_attention", cries.get("one_win", ["📌 Звіт прийнято. Працюємо далі."])))
+                else:
+                    cry = random.choice(cries.get("one_win", ["📌 Звіт прийнято. Працюємо далі."]))
 
-            # 4. Збираємо красиве табло аналітики
             reply_text = (
                 f"✅ **Звіт прийнято і записано!**\n"
                 f"⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n"
                 f"📊 **Аналітика виконання плану:**\n"
-                f"🛒 **Торгівля:** {fact_trade:.0f} з {plan_trade:.0f} грн ({p_trade}%) — {marker_trade}\n"
-                f"📰 **Передплата:** {fact_sub:.0f} з {plan_sub:.0f} шт ({p_sub}%) — {marker_sub}\n"
-                f"⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n"
-                f"{cry}"
+                + "\n".join(metric_lines)
+                + f"\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n{cry}"
             )
         else:
-            # Якщо планів немає в таблиці — звичайна стандартна відповідь
+            summary_lines = []
+            for metric in active_metrics:
+                meta = METRIC_META[metric]
+                fact = float(parsed.get(metric, 0.0))
+                summary_lines.append(f"{meta['emoji']} {meta['label']}: {fact:.0f} {meta['unit']}.")
             reply_text = (
                 f"✅ **Звіт прийнято і записано!**\n"
-                f"🛒 Торгівля: {fact_trade:.0f} грн.\n"
-                f"📰 Передплата: {fact_sub:.0f} шт.\n"
-                f"*(План на сьогодні не знайдено)*"
+                + "\n".join(summary_lines)
+                + "\n*(План на сьогодні не знайдено)*"
             )
 
-        # Надсилаємо аналітику миттєво як підтвердження прийому звіту
         await event.reply(reply_text)
 
         if not already:
@@ -827,19 +845,15 @@ class ShiftReportBot:
         event: events.NewMessage.Event,
     ) -> None:
         checks: list[tuple[str, list]] = []
-        
-        # Перевіряємо нулі через .get() як у звичайному словнику
-        fact_trade = float(parsed.get("trade", 0.0))
-        fact_sub = float(parsed.get("subscription", 0.0))
-        
-        if fact_trade == 0:
-            checks.append(
-                ("trade", self.cfg.messages.get("zero_trade_followups", []))
-            )
-        if fact_sub == 0:
-            checks.append(
-                ("prepayment", self.cfg.messages.get("zero_prepayment_followups", []))
-            )
+        for metric in self.cfg.enabled_metrics:
+            meta = METRIC_META.get(metric)
+            if not meta:
+                continue
+            value = float(parsed.get(metric, 0.0))
+            if value == 0:
+                checks.append(
+                    (metric, self.cfg.messages.get(meta["zero_followup_key"], []))
+                )
 
         for kind, templates in checks:
             if not templates:

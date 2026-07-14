@@ -51,6 +51,7 @@ class AppConfig:
     branches: dict[tuple[str, str], Branch]
     people: list[Person]
     messages: dict[str, Any]
+    enabled_metrics: list[str]
 
     def people_for_group(self, group_id: str) -> list[Person]:
         return [p for p in self.people if p.group == group_id]
@@ -148,6 +149,19 @@ def load_config() -> AppConfig:
             )
         )
 
+    enabled_metrics_raw = settings.get("enabled_metrics")
+    if enabled_metrics_raw is None:
+        enabled_metrics = ["trade", "subscription"]
+    elif isinstance(enabled_metrics_raw, list):
+        enabled_metrics = [str(item).strip() for item in enabled_metrics_raw if str(item).strip()]
+    else:
+        enabled_metrics = [str(enabled_metrics_raw).strip()]
+
+    allowed_metrics = {"trade", "subscription"}
+    enabled_metrics = [metric for metric in enabled_metrics if metric in allowed_metrics]
+    if not enabled_metrics:
+        enabled_metrics = ["trade", "subscription"]
+
     return AppConfig(
         timezone=settings.get("timezone", "Europe/Kyiv"),
         schedule_enabled=bool(settings.get("schedule_enabled", False)),
@@ -161,4 +175,5 @@ def load_config() -> AppConfig:
         branches=branches,
         people=people,
         messages=messages,
+        enabled_metrics=enabled_metrics,
     )

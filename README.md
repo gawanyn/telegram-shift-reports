@@ -70,7 +70,7 @@ python -m src.trigger reset-day
 ```
 
 Конфіги
-- `config/settings.yaml` — основні опції (timezone, schedule_enabled, reminder_time, missing_check_time, dm_time та ін.).
+- `config/settings.yaml` — основні опції (timezone, schedule_enabled, reminder_time, missing_check_time, dm_time та ін.). Додавайте `enabled_metrics` якщо потрібно моніторити лише окремі показники.
 - `config/groups.yaml`, `config/people.yaml`, `config/branches.yaml`, `config/messages.yaml` — наповніть згідно з вашою структурою.
 
 Куди дивитися в коді (корисні файли)

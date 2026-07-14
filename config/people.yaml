@@ -25,12 +25,12 @@ people:
     branch_code: "77202"
     is_active: true
 
-  # - group: stationary
-  #   display_name: "Бецин Галина Василівна"
-  #   username: 
-  #   telegram_id: 
-  #   branch_code: "77202"
-  #   is_active: true
+  - group: stationary
+    display_name: "Бецин Галина Василівна"
+    username: 
+    telegram_id: 8953273741
+    branch_code: "77202"
+    is_active: true
 
   - group: stationary
     display_name: "Сенюк Іванна Іванівна"
@@ -45,6 +45,13 @@ people:
     telegram_id: 6139395066
     branch_code: "77552"
     is_active: true
+
+  - group: stationary
+    display_name: "Дорош Іванна"
+    username: 
+    telegram_id: 852142781
+    branch_code: "77552"
+    is_active: false
 
   - group: stationary
     display_name: "Пилячик Іванна Дмитрівна"
@@ -135,14 +142,14 @@ people:
     username: 
     telegram_id: 5762919931
     branch_code: "77531"
-    is_active: false  # 🔥 Тимчасово відсутня (лікарняний)
+    is_active: true
 
   - group: stationary
     display_name: "Мізунська Ірина Тарасівна"
     username: 
     telegram_id: 7678833103
     branch_code: "77531"
-    is_active: true
+    is_active: false #підміна
 
   - group: stationary
     display_name: "Цап Наталія Іванівна"
@@ -217,11 +224,18 @@ people:
     is_active: true
 
   - group: stationary
-    display_name: "Бобик Андрій"
-    username: Andriy100
-    telegram_id: 311522703
+    display_name: "Другова Наталія Олександрівна"
+    username: 
+    telegram_id: 8215407309
     branch_code: "77601"
-    is_active: false  # Звільнений)
+    is_active: true
+
+  - group: stationary
+    display_name: "Лукач Григорій"
+    username: 
+    telegram_id: 940432230
+    branch_code: "77601"
+    is_active: false
 
   - group: stationary
     display_name: "Курташ Орест"
@@ -241,6 +255,13 @@ people:
     display_name: "Боринець Марія Богданівна"
     username: 
     telegram_id: 7239002724
+    branch_code: "77631"
+    is_active: false
+
+  - group: stationary
+    display_name: "Петровська Тетяна Юріївна"
+    username: 
+    telegram_id: 7870817657
     branch_code: "77631"
     is_active: true
 
@@ -300,13 +321,13 @@ people:
     username: 
     telegram_id: 1695438562
     branch_code: "76547"
-    is_active: false  # 🔥 Тимчасово відсутня (відпустка)
+    is_active: true
 
   - group: mobile
     display_name: "Войтович Олег"
     username: olhqq
     telegram_id: 336547767
-    branch_code: "76547"
+    branch_code: "76594"
     is_active: true
 
   - group: mobile
@@ -321,4 +342,4 @@ people:
     username: 
     telegram_id: 934348070
     branch_code: "76594"
-    is_active: true
+    is_active: false # 🔥 Тимчасово відсутня (лікарняний)
