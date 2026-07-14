@@ -44,9 +44,11 @@ def extract_amount(keywords, text):
     # Регулярка для числа: ловить цілі, десяткові та числа з пробілами (1 200, 50.50)
     num_regex = r'(\d+(?:[ \u00A0]\d+)*(?:[.,]\d+)?)'
     
-    # Варіант 1: Слово -> Число ("Пенсія-12;", "Торгівля- 1 567.00")
-    # [а-яіїєґa-z]* — ФІКС: дозволяє будь-які букви після кореня (я, ї, й, а)
-    pattern_forward = rf'(?i)(?:{kw_pattern})[а-яіїєґa-z]*[\s\-:=.,;]*{num_regex}'
+    # Дозволені роздільники між словом і числом (включаючи підкреслення)
+    sep = r'[_\s\-:=.,;]*'
+    # Варіант 1: Слово -> Число ("Пенсія-12;", "Торгівля- 1 567.00", "товар_442")
+    # [а-яіїєґa-z]* — дозволяє будь-які букви після кореня
+    pattern_forward = rf'(?i)(?:{kw_pattern})[а-яіїєґa-z]*{sep}{num_regex}'
     match_f = re.search(pattern_forward, text)
     
     if match_f:
@@ -55,7 +57,7 @@ def extract_amount(keywords, text):
         return float(raw_num)
         
     # Варіант 2: Число -> Слово ("1515-товар", "0 підписка")
-    pattern_backward = rf'(?i){num_regex}[\s\-:=.,;]*(?:грн|шт|кг)?[\s\-:=.,;]*(?:{kw_pattern})'
+    pattern_backward = rf'(?i){num_regex}{sep}(?:грн|шт|кг)?{sep}(?:{kw_pattern})'
     match_b = re.search(pattern_backward, text)
     
     if match_b:
