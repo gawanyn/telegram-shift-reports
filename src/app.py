@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 import random
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -38,6 +38,24 @@ METRIC_META = {
         "zero_followup_key": "zero_prepayment_followups",
     },
 }
+
+
+def build_reminder_metrics_phrase(enabled_metrics: list[str] | tuple[str, ...] | None) -> str:
+    active_metrics = [metric for metric in (enabled_metrics or []) if metric in METRIC_META]
+    if not active_metrics:
+        active_metrics = ["trade", "subscription"]
+
+    has_trade = "trade" in active_metrics
+    has_subscription = "subscription" in active_metrics
+
+    if has_trade and has_subscription:
+        return "pensions, trade, and subscriptions"
+    if has_trade:
+        return "pensions and trade"
+    if has_subscription:
+        return "pensions and subscriptions"
+    return "pensions, trade, and subscriptions"
+
 
 class ShiftReportBot:
     def __init__(self) -> None:
@@ -332,6 +350,11 @@ class ShiftReportBot:
             base_text = random.choice(raw_reminder)
         else:
             base_text = str(raw_reminder)
+
+        if isinstance(base_text, str):
+            base_text = base_text.format(
+                metrics_phrase=build_reminder_metrics_phrase(self.cfg.enabled_metrics)
+            )
         
         # 4. Формуємо красивий список працюючих відділень з тегами
         lines = []
@@ -491,6 +514,8 @@ class ShiftReportBot:
             "!ids": lambda: self._cmd_get_ids(event, group_id),
             "!чистка": lambda: self._cmd_clear_messages(event),
             "!clear": lambda: self._cmd_clear_messages(event),
+            "!ретро": lambda: self._cmd_retro(event, group_id),
+            "!retro": lambda: self._cmd_retro(event, group_id),
         }
         if cmd in ("!допомога", "!help"):
             await event.reply(
@@ -1101,3 +1126,167 @@ class ShiftReportBot:
                 count_not_recognized,
                 count_processed,
             )
+
+    async def _scan_group_history_for_day(self, day: date, group) -> None:
+        """Scan a single group's chat history for a specific day and process new reports.
+
+        This reuses the same logic as the automatic catch-up but scans the entire day
+        (00:00..23:59) instead of from 12:00 until now.
+        """
+        chat_entity = self._group_entities.get(group.id)
+        if not chat_entity:
+            logger.warning("⚠️ Не знайдено збереженої сутності для групи [%s]", group.title)
+            return
+
+        day_start = datetime(day.year, day.month, day.day, 0, 0, 0, tzinfo=self.tz)
+        day_end = day_start + timedelta(days=1)
+
+        processed_reports: list[tuple[int, str, str, str]] = []
+        processed_report_keys: set[tuple[int, str, str]] = set()
+
+        if self._sheets:
+            try:
+                processed_reports = self._sheets.load_processed_reports(day, group.title, group.id)
+                for telegram_id, report_text, row_date, row_time in processed_reports:
+                    processed_report_keys.add((telegram_id, str(row_date).strip(), str(row_time).strip()))
+            except Exception as e:
+                logger.warning("[%s] Не вдалося завантажити опрацьовані звіти з Google Sheets: %s", group.id, e)
+
+        scanned_messages = 0
+        count_bot_messages = 0
+        count_no_sender = 0
+        count_empty_text = 0
+        count_already_responded = 0
+        count_already_in_sheet = 0
+        count_not_recognized = 0
+        count_processed = 0
+
+        try:
+            async for message in self.client.iter_messages(chat_entity):
+                scanned_messages += 1
+                msg_date_local = message.date.astimezone(self.tz)
+
+                # skip messages newer than day_end
+                if msg_date_local >= day_end:
+                    continue
+
+                # stop when we've reached older than day_start
+                if msg_date_local < day_start:
+                    break
+
+                if message.sender_id == self._my_id:
+                    count_bot_messages += 1
+                    continue
+
+                sender_id = message.sender_id
+                if not sender_id:
+                    count_no_sender += 1
+                    continue
+
+                raw_text = " ".join(str(message.message or "").split()).strip()
+                if not raw_text:
+                    count_empty_text += 1
+                    continue
+
+                msg_date_str = msg_date_local.strftime("%Y-%m-%d")
+                msg_time_str = msg_date_local.strftime("%H:%M:%S")
+
+                search_key = (sender_id, msg_date_str, msg_time_str)
+                if search_key in processed_report_keys:
+                    count_already_in_sheet += 1
+                    if not self.state.has_responded(day, group.id, sender_id):
+                        self.state.ensure_day(day, group.id, [sender_id])
+                        parsed = parse_report(raw_text) or {}
+                        self.state.mark_response(day, group.id, sender_id, parsed, msg_date_local)
+                    continue
+
+                if self.state.has_responded(day, group.id, sender_id):
+                    count_already_responded += 1
+                    continue
+
+                parsed = parse_report(raw_text)
+                if parsed is None:
+                    count_not_recognized += 1
+                    continue
+
+                class SimulatedEvent:
+                    def __init__(self, msg, cid, client):
+                        self.message = msg
+                        self.chat_id = cid
+                        self.id = msg.id
+                        self._client = client
+                        self.retrospective = True
+
+                    async def reply(self, *args, **kwargs):
+                        pass
+
+                    async def get_sender(self):
+                        return await self.message.get_sender()
+
+                simulated_event = SimulatedEvent(message, message.chat_id, self.client)
+                await self._handle_group_message(simulated_event)
+                count_processed += 1
+
+        except Exception as e:
+            logger.error("⚠️ Не вдалося прочитати історію чату [%s]: %s", group.title, e)
+            return
+
+        logger.info(
+            "[%s] Ретроспективну перевірку за %s завершено. scanned=%d, processed=%d, in_sheet=%d, already_responded=%d, not_recognized=%d",
+            group.id,
+            day.isoformat(),
+            scanned_messages,
+            count_processed,
+            count_already_in_sheet,
+            count_already_responded,
+            count_not_recognized,
+        )
+
+    async def _cmd_retro(self, event: events.NewMessage.Event, group_id: str) -> None:
+        """Admin command: !ретро <date|date,date|date..date>
+
+        Examples:
+          !ретро 2026-07-12
+          !ретро 2026-07-12,2026-07-13
+          !ретро 2026-07-10..2026-07-12
+        """
+        raw = (event.message.message or "").strip()
+        parts = raw.split(maxsplit=1)
+        if len(parts) < 2:
+            await event.reply("Використання: !ретро YYYY-MM-DD або !ретро YYYY-MM-DD,YYYY-MM-DD або !ретро YYYY-MM-DD..YYYY-MM-DD")
+            return
+
+        arg = parts[1].strip()
+        # determine range
+        try:
+            if ".." in arg:
+                a, b = [s.strip() for s in arg.split("..", 1)]
+            elif "," in arg:
+                a, b = [s.strip() for s in arg.split(",", 1)]
+            else:
+                a = arg
+                b = arg
+
+            start_date = datetime.strptime(a, "%Y-%m-%d").date()
+            end_date = datetime.strptime(b, "%Y-%m-%d").date()
+        except Exception:
+            await event.reply("Невірний формат дати. Використовуйте YYYY-MM-DD або YYYY-MM-DD,YYYY-MM-DD або YYYY-MM-DD..YYYY-MM-DD")
+            return
+
+        if start_date > end_date:
+            await event.reply("Початкова дата більша за кінцеву.")
+            return
+
+        group = self.cfg.group_by_id(group_id)
+        if not group:
+            await event.reply("Не знайдено групи у конфігурації.")
+            return
+
+        await event.reply(f"Запускаю ретроспективу для групи {group.title} з {start_date.isoformat()} по {end_date.isoformat()}...")
+
+        cur = start_date
+        while cur <= end_date:
+            await self._scan_group_history_for_day(cur, group)
+            cur = cur + timedelta(days=1)
+
+        await event.reply("Ретроспективу завершено.")
