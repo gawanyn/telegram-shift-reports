@@ -30,7 +30,7 @@ people:
     username: 
     telegram_id: 8953273741
     branch_code: "77202"
-    is_active: true
+    is_active: false
 
   - group: stationary
     display_name: "Сенюк Іванна Іванівна"
